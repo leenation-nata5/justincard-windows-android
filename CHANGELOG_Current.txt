@@ -1,0 +1,19 @@
+Just InCard – aktueller gemeinsamer Stand
+
+Android 14.1.0
+- Native editierbare Android-Quelle neu aus dem bereitgestellten APK/AAB-Release rekonstruiert.
+- Livebild-Funktion mit CameraX bleibt erhalten; ML Kit OCR und Touch-Fokus integriert.
+- Windows-kompatibler Google Drive/Sheets Sync mit gleichem AppData-Schema und gleicher XLSX-Vorlage.
+- EN-Referenzsuche für Set-Codes bei Erhalt der tatsächlichen Kartensprache.
+- Mengenwahl beim Hinzufügen aus Suche/Scanner.
+- Sammlung ohne Wunsch-/Tauschfunktion, mit geschätztem Marktwert.
+- Deckbuilder: Main/Extra automatisch, nur Side manuell; Platzhalter bleiben möglich.
+- Bereichsbezogene Anzeigeoptionen ergänzt.
+
+Windows 1.2.7
+- Cloud Collection Key plattformunabhängig vereinheitlicht, damit identische Druckvarianten aus Android und Windows beim Sync nicht doppelt entstehen.
+- Alle Funktionen aus Windows 1.2.6 bleiben erhalten.
+
+GitHub
+- Ein gemeinsames Repository baut Android und Windows parallel.
+- Android: APK/AAB/Logs; Windows: Portable ZIP/Installer/Logs.

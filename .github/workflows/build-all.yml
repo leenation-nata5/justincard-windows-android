@@ -1,0 +1,269 @@
+name: Build Just InCard Android + Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_release:
+        description: "Android Release APK/AAB zusätzlich bauen"
+        type: boolean
+        default: true
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: write
+
+env:
+  ANDROID_VERSION: "14.1.0"
+  WINDOWS_VERSION: "1.2.7"
+
+jobs:
+  validate:
+    name: Gemeinsamen Cloud-Vertrag prüfen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Unified repository validation
+        run: |
+          python tools/validate_unified.py
+          python tools/test_android_contract.py
+
+  build-android:
+    name: Android 14.1.0 / APK + AAB
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Gradle 8.11.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+
+      - name: Produktionssignierung vorbereiten
+        id: signing
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          mkdir -p .signing logs
+          if [[ -n "${ANDROID_KEYSTORE_BASE64:-}" && -n "${ANDROID_KEYSTORE_PASSWORD:-}" && -n "${ANDROID_KEY_ALIAS:-}" && -n "${ANDROID_KEY_PASSWORD:-}" ]]; then
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > .signing/release.keystore
+            echo "ANDROID_KEYSTORE_PATH=$PWD/.signing/release.keystore" >> "$GITHUB_ENV"
+            echo "ANDROID_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_ALIAS=$ANDROID_KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_PASSWORD=$ANDROID_KEY_PASSWORD" >> "$GITHUB_ENV"
+            echo "signing=production" >> logs/signing.txt
+            echo "production=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "signing=repository-ci-test" >> logs/signing.txt
+            echo "production=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: OAuth Signatur-Fingerabdruck protokollieren
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${ANDROID_KEYSTORE_PATH:-}" ]]; then
+            keytool -list -v -keystore "$ANDROID_KEYSTORE_PATH" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" \
+              | grep -E 'SHA1:|SHA256:' | tee logs/oauth-signing-fingerprint.txt
+          else
+            keytool -list -v -keystore ci/justincard-ci-test.keystore -storepass justincard-ci -alias justincard-ci \
+              | grep -E 'SHA1:|SHA256:' | tee logs/oauth-signing-fingerprint.txt
+          fi
+
+      - name: Android Unit Tests
+        run: gradle --no-daemon --stacktrace :app:testCiDebugUnitTest 2>&1 | tee logs/tests.txt
+
+      - name: Debug APK bauen
+        run: gradle --no-daemon --stacktrace :app:assembleCiDebug 2>&1 | tee logs/assemble-debug.txt
+
+      - name: CI Release APK und AAB bauen
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_release == true }}
+        run: gradle --no-daemon --stacktrace :app:assembleCiRelease :app:bundleCiRelease 2>&1 | tee logs/ci-release-build.txt
+
+      - name: Produktions-Release APK und AAB bauen
+        if: ${{ steps.signing.outputs.production == 'true' && (github.event_name != 'workflow_dispatch' || inputs.build_release == true) }}
+        run: gradle --no-daemon --stacktrace :app:assembleProdRelease :app:bundleProdRelease 2>&1 | tee logs/production-release-build.txt
+
+      - name: Android Artefakte sammeln
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p dist logs
+          find app/build/outputs -type f \( -name '*.apk' -o -name '*.aab' \) -print 2>/dev/null | tee logs/output-files.txt || true
+          if compgen -G 'app/build/outputs/apk/ci/debug/*.apk' >/dev/null; then
+            cp app/build/outputs/apk/ci/debug/*.apk "dist/JustInCard-Android-${ANDROID_VERSION}-ci-debug.apk"
+          fi
+          if compgen -G 'app/build/outputs/apk/ci/release/*.apk' >/dev/null; then
+            cp app/build/outputs/apk/ci/release/*.apk "dist/JustInCard-Android-${ANDROID_VERSION}-ci-release.apk"
+          fi
+          if compgen -G 'app/build/outputs/bundle/ciRelease/*.aab' >/dev/null; then
+            cp app/build/outputs/bundle/ciRelease/*.aab "dist/JustInCard-Android-${ANDROID_VERSION}-ci-release.aab"
+          fi
+          if compgen -G 'app/build/outputs/apk/prod/release/*.apk' >/dev/null; then
+            cp app/build/outputs/apk/prod/release/*.apk "dist/JustInCard-Android-${ANDROID_VERSION}-release.apk"
+          fi
+          if compgen -G 'app/build/outputs/bundle/prodRelease/*.aab' >/dev/null; then
+            cp app/build/outputs/bundle/prodRelease/*.aab "dist/JustInCard-Android-${ANDROID_VERSION}-release.aab"
+          fi
+          if compgen -G 'dist/*' >/dev/null; then sha256sum dist/* | tee dist/SHA256SUMS-Android.txt; fi
+
+      - name: Android Builds hochladen
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: JustInCard-Android-${{ env.ANDROID_VERSION }}-${{ github.run_number }}
+          path: android/dist/**
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+      - name: Android Logs hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: JustInCard-Android-Logs-${{ github.run_number }}
+          path: android/logs/**
+          if-no-files-found: warn
+          retention-days: 30
+
+  build-windows:
+    name: Windows 1.2.7 / x64
+    needs: validate
+    runs-on: windows-latest
+    timeout-minutes: 70
+    defaults:
+      run:
+        working-directory: windows
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            windows/requirements.txt
+            windows/requirements-build.txt
+
+      - name: Logs vorbereiten
+        shell: pwsh
+        run: New-Item -ItemType Directory -Force -Path logs | Out-Null
+
+      - name: Optionalen Google Desktop OAuth Client einbetten
+        shell: pwsh
+        env:
+          GOOGLE_OAUTH_CLIENT_JSON_B64: ${{ secrets.GOOGLE_OAUTH_CLIENT_JSON_B64 }}
+        run: |
+          if (-not [string]::IsNullOrWhiteSpace($env:GOOGLE_OAUTH_CLIENT_JSON_B64)) {
+            [IO.File]::WriteAllBytes((Join-Path $PWD "assets\google_oauth_client.json"), [Convert]::FromBase64String($env:GOOGLE_OAUTH_CLIENT_JSON_B64))
+            "Bundled Google OAuth desktop client: yes" | Set-Content logs\google-oauth-build.txt
+          } else {
+            "Bundled Google OAuth desktop client: no" | Set-Content logs\google-oauth-build.txt
+          }
+
+      - name: Python Abhängigkeiten
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          python -m pip install --upgrade pip wheel setuptools 2>&1 | Tee-Object logs\pip-install.txt
+          if ($LASTEXITCODE -ne 0) { throw "pip bootstrap failed" }
+          python -m pip install -r requirements-build.txt 2>&1 | Tee-Object logs\pip-install.txt -Append
+          if ($LASTEXITCODE -ne 0) { throw "dependency install failed" }
+
+      - name: Tesseract + Inno Setup
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          choco install tesseract -y --no-progress 2>&1 | Tee-Object logs\chocolatey.txt
+          if ($LASTEXITCODE -notin @(0,1641,3010)) { throw "Tesseract failed" }
+          choco install innosetup -y --no-progress 2>&1 | Tee-Object logs\chocolatey.txt -Append
+          if ($LASTEXITCODE -notin @(0,1641,3010)) { throw "Inno Setup failed" }
+          $tessdata = "C:\Program Files\Tesseract-OCR\tessdata"
+          $languages = @('eng','deu','fra','ita','por','spa','jpn','kor','chi_sim','chi_tra','osd')
+          foreach ($lang in $languages) {
+            $target = Join-Path $tessdata "$lang.traineddata"
+            if (-not (Test-Path $target)) {
+              Invoke-WebRequest -Uri "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/$lang.traineddata" -OutFile $target -UseBasicParsing
+            }
+          }
+
+      - name: Windows Tests + Portable Build
+        shell: pwsh
+        run: .\scripts\build_windows.ps1 -TesseractPath "C:\Program Files\Tesseract-OCR"
+
+      - name: Windows Installer
+        if: github.event_name != 'pull_request'
+        shell: pwsh
+        run: .\scripts\build_installer.ps1
+
+      - name: Windows Artefakte hochladen
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: JustInCard-Windows-${{ env.WINDOWS_VERSION }}-${{ github.run_number }}
+          path: |
+            windows/release/*.zip
+            windows/release/*.zip.sha256
+            windows/release/*.exe
+            windows/release/*.exe.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+      - name: Windows Logs hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: JustInCard-Windows-Logs-${{ github.run_number }}
+          path: windows/logs/**
+          if-no-files-found: warn
+          retention-days: 30
+
+  publish-release:
+    name: Gemeinsames GitHub Release
+    if: success() && startsWith(github.ref, 'refs/tags/v')
+    needs: [build-android, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: JustInCard-Android-${{ env.ANDROID_VERSION }}-*
+          path: release/android
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: JustInCard-Windows-${{ env.WINDOWS_VERSION }}-*
+          path: release/windows
+          merge-multiple: true
+      - name: Release veröffentlichen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" release/android/* release/windows/* \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "Just InCard ${GITHUB_REF_NAME}" \
+            --generate-notes

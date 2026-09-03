@@ -1,0 +1,10 @@
+[project]
+name = "justincard-windows"
+version = "1.2.7"
+description = "Just InCard Windows Desktop"
+requires-python = ">=3.11,<3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"

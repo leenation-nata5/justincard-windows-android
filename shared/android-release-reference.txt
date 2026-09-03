@@ -1,0 +1,13 @@
+Reference upload: JustInCard-Android-ci-release-3885c55.zip
+SHA-256: a79ddd7f1e30032ff8b8ba3a3c1da89edf771e9dd29d8bb5d6778c7dfe47dbba
+
+The upload contains compiled release artifacts only, not the original source tree:
+- AAB SHA-256: d66c11f74e19a3fa07333371f2b64b27230ec02d6ae86945e2064fd667ea19d1
+- APK SHA-256: 1717504f3898321d5ab94daa13da4a74a268f3e8a1a5b02234ba874766788d89
+
+Observed application package / technology reference used for the source rebuild:
+- org.yugioh.kartenliste
+- native Android / Jetpack Compose
+- CameraX live camera
+- ML Kit text recognition
+- Google Play Services authentication

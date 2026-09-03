@@ -1,0 +1,12 @@
+*.xlsx binary
+*.png binary
+*.ico binary
+*.keystore binary
+*.zip binary
+*.aab binary
+*.apk binary
+*.py text eol=lf
+*.kt text eol=lf
+*.kts text eol=lf
+*.yml text eol=lf
+*.md text eol=lf

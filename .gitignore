@@ -1,0 +1,15 @@
+**/.gradle/
+**/build/
+**/.idea/
+**/*.iml
+android/.signing/
+android/dist/
+windows/build/
+windows/dist/
+windows/release/
+windows/logs/*
+!windows/logs/.gitkeep
+**/__pycache__/
+**/.pytest_cache/
+*.pyc
+.DS_Store

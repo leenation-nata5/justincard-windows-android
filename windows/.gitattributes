@@ -1,0 +1,4 @@
+# Treat the recovered PyInstaller archive as binary.
+recovered/PYZ.pyz binary
+*.png binary
+*.ico binary
