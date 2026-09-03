@@ -1,6 +1,6 @@
 Just InCard – aktueller gemeinsamer Stand
 
-Android 14.1.1
+Android 14.1.2
 - Native editierbare Android-Quelle neu aus dem bereitgestellten APK/AAB-Release rekonstruiert.
 - Livebild-Funktion mit CameraX bleibt erhalten; ML Kit OCR und Touch-Fokus integriert.
 - Windows-kompatibler Google Drive/Sheets Sync mit gleichem AppData-Schema und gleicher XLSX-Vorlage.
@@ -18,8 +18,14 @@ GitHub
 - Ein gemeinsames Repository baut Android und Windows parallel.
 - Android: APK/AAB/Logs; Windows: Portable ZIP/Installer/Logs.
 
-Android 14.1.1 Build-Hotfix
+Android 14.1.2 Build-Hotfix
 - androidx.core von 1.17.0 auf 1.16.0 festgesetzt (compileSdk 35 kompatibel).
 - androidx.activity-compose von 1.11.0 auf 1.10.1 festgesetzt (compileSdk 35 kompatibel).
 - GitHub installiert Android SDK 35 / Build Tools 35.0.0 explizit.
 - Android Debug, Android CI Release APK/AAB und Windows werden ohne zusätzliche Auswahl automatisch gebaut.
+
+Android 14.1.2 Kotlin-Compiler-Hotfix
+- Google Play Services Auth auf 21.4.0 festgesetzt, damit GoogleSignIn/GoogleSignInClient mit der bestehenden UI weiter verfügbar sind.
+- Gson-Typen für Cloud-Backup und Anzeigeprofile explizit typisiert, damit Kotlin 2.1.20 die Generics eindeutig auflösen kann.
+- Lokale JsonArray.orEmpty-Erweiterung entfernt, weil sie String?.orEmpty im selben File überschattete und Folge-Typfehler erzeugte.
+- Google-Sheets/Drive-Funktionalität und bestehendes Login-UI bleiben unverändert.

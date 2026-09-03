@@ -44,7 +44,7 @@ class GoogleCloudRepository(
         const val SETTING_SORT = "google_cloud_sort_field"
         const val SETTING_DIRECTION = "google_cloud_sort_direction"
         const val SETTING_AUTO_SYNC = "google_cloud_auto_sync"
-        const val ANDROID_VERSION = "14.1.1"
+        const val ANDROID_VERSION = "14.1.2"
     }
 
     data class Status(
@@ -271,10 +271,10 @@ class GoogleCloudRepository(
         val linked = root.get("spreadsheet_id")?.asString.orEmpty()
         if (linked.isNotBlank() && linked != spreadsheetId) return ParsedBackup(emptyList(), emptyList())
         val collectionRaw: List<Map<String, Any?>> = runCatching {
-            gson.fromJson(root.get("collection"), listMapType)
+            gson.fromJson<List<Map<String, Any?>>>(root.get("collection"), listMapType)
         }.getOrDefault(emptyList())
         val decksRaw: List<Map<String, Any?>> = runCatching {
-            gson.fromJson(root.get("decks"), listMapType)
+            gson.fromJson<List<Map<String, Any?>>>(root.get("decks"), listMapType)
         }.getOrDefault(emptyList())
         return ParsedBackup(
             collectionRaw.mapNotNull(CloudMapper::mapToCollection),
@@ -327,9 +327,10 @@ class GoogleCloudRepository(
             Request.Builder().url("https://sheets.googleapis.com/v4/spreadsheets/${encode(spreadsheetId)}?fields=sheets.properties").get()
         )
         val root = gson.fromJson(text, JsonObject::class.java)
-        return root.getAsJsonArray("sheets").orEmpty().associate { node ->
-            val p = node.asJsonObject.getAsJsonObject("properties")
-            p.get("title").asString to p.get("sheetId").asInt
+        val sheets: JsonArray = root.getAsJsonArray("sheets") ?: JsonArray()
+        return sheets.associate { node ->
+            val properties = node.asJsonObject.getAsJsonObject("properties")
+            properties.get("title").asString to properties.get("sheetId").asInt
         }
     }
 
@@ -380,4 +381,3 @@ private suspend fun com.google.android.gms.tasks.Task<Void>.awaitCompat() = with
     if (!isSuccessful) throw (exception ?: IllegalStateException("Google Task fehlgeschlagen"))
 }
 
-private fun JsonArray?.orEmpty(): JsonArray = this ?: JsonArray()

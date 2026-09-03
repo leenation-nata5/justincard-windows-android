@@ -23,4 +23,13 @@ assert 'CloudMapper.mergeCollection' in cloud
 assert 'CloudMapper.mergeDecks' in cloud
 assert 'drive.file' in (SRC/'core/CloudContract.kt').read_text('utf-8')
 assert 'drive.appdata' in (SRC/'core/CloudContract.kt').read_text('utf-8')
+
+gradle=(ROOT/'android/app/build.gradle.kts').read_text('utf-8')
+display=(SRC/'ui/DisplayPrefs.kt').read_text('utf-8')
+assert 'play-services-auth:21.4.0' in gradle
+assert 'play-services-auth:22.0.0' not in gradle
+assert 'gson.fromJson<List<Map<String, Any?>>>' in cloud
+assert 'private fun JsonArray?.orEmpty()' not in cloud
+assert 'gson.fromJson<Map<String, Map<String, Boolean>>>' in display
+
 print('Android source contract OK')

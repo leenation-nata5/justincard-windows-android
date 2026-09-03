@@ -71,6 +71,20 @@ if 'inputs.build_release' in wf_text:
 if 'sdkmanager "platforms;android-35"' not in wf_text:
     errors.append('Unified workflow does not install Android API 35 explicitly')
 
+# Android 14.1.2 Kotlin compiler regression guards.
+if 'com.google.android.gms:play-services-auth:22.0.0' in gradle_text:
+    errors.append('play-services-auth 22.0.0 removes legacy GoogleSignIn client entry points used by this source')
+if 'com.google.android.gms:play-services-auth:21.4.0' not in gradle_text:
+    errors.append('Google Sign-In compatibility pin 21.4.0 missing')
+cloud_repo=need('android/app/src/main/java/org/yugioh/kartenliste/cloud/GoogleCloudRepository.kt').read_text('utf-8')
+display_prefs=need('android/app/src/main/java/org/yugioh/kartenliste/ui/DisplayPrefs.kt').read_text('utf-8')
+if 'private fun JsonArray?.orEmpty()' in cloud_repo:
+    errors.append('JsonArray.orEmpty shadows Kotlin String?.orEmpty and breaks type inference')
+if 'gson.fromJson<List<Map<String, Any?>>>' not in cloud_repo:
+    errors.append('Explicit Gson generic type for cloud collection/decks missing')
+if 'gson.fromJson<Map<String, Map<String, Boolean>>>' not in display_prefs:
+    errors.append('Explicit Gson generic type for display profiles missing')
+
 if errors:
     print('\n'.join('ERROR '+e for e in errors)); sys.exit(1)
 print('Unified repository validation OK')

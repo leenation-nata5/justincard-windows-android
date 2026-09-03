@@ -138,7 +138,7 @@ private fun ScreenContent(vm: JustInCardViewModel, state: AppUiState, modifier: 
 private fun HomeScreen(state: AppUiState) {
     Column(Modifier.fillMaxSize().padding(22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Text("Just InCard", fontSize = 30.sp, fontWeight = FontWeight.Bold)
-        Text("Android 14.1.1 • Windows-kompatible Cloud-Sammlung", color = TextMuted)
+        Text("Android 14.1.2 • Windows-kompatible Cloud-Sammlung", color = TextMuted)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatCard("Karten", state.collection.sumOf { it.quantity }.toString(), Modifier.weight(1f))
             StatCard("Druckvarianten", state.collection.size.toString(), Modifier.weight(1f))

@@ -13,6 +13,7 @@ configurations.configureEach {
         "androidx.activity:activity:1.10.1",
         "androidx.activity:activity-ktx:1.10.1",
         "androidx.activity:activity-compose:1.10.1",
+        "com.google.android.gms:play-services-auth:21.4.0",
     )
 }
 
@@ -24,8 +25,8 @@ android {
         applicationId = "org.yugioh.kartenliste.yugiohkartenliste"
         minSdk = 24
         targetSdk = 35
-        versionCode = 14101
-        versionName = "14.1.1"
+        versionCode = 14102
+        versionName = "14.1.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -126,7 +127,7 @@ dependencies {
     implementation("com.google.mlkit:text-recognition-korean:16.0.1")
     implementation("com.google.mlkit:text-recognition-devanagari:16.0.1")
 
-    implementation("com.google.android.gms:play-services-auth:22.0.0")
+    implementation("com.google.android.gms:play-services-auth:21.4.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.google.code.gson:gson:2.11.0")
     implementation("io.coil-kt:coil-compose:2.7.0")

@@ -1,6 +1,6 @@
 # Just InCard Cross-Platform Cloud Contract
 
-Windows 1.2.7 and Android 14.1.1 deliberately use the same Google Cloud identity and data contract.
+Windows 1.2.7 and Android 14.1.2 deliberately use the same Google Cloud identity and data contract.
 
 - OAuth scopes: `drive.file`, `drive.appdata`
 - Spreadsheet title: `Just InCard – Sammlung`

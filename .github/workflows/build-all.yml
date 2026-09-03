@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 env:
-  ANDROID_VERSION: "14.1.1"
+  ANDROID_VERSION: "14.1.2"
   WINDOWS_VERSION: "1.2.7"
 
 jobs:
@@ -30,7 +30,7 @@ jobs:
           python tools/test_android_contract.py
 
   build-android:
-    name: Android 14.1.1 / APK + AAB
+    name: Android 14.1.2 / APK + AAB
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 60
