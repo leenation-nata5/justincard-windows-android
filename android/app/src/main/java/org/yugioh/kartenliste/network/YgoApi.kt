@@ -94,7 +94,7 @@ class YgoApi(
     private fun get(url: String): String? {
         val request = Request.Builder()
             .url(url)
-            .header("User-Agent", "JustInCard-Android/14.1.0")
+            .header("User-Agent", "JustInCard-Android/14.1.1")
             .build()
         return client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) return null

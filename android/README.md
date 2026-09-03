@@ -1,4 +1,4 @@
-# Just InCard Android 14.1.0
+# Just InCard Android 14.1.1
 
 Native Kotlin/Jetpack-Compose source rebuild of the supplied Android release.
 

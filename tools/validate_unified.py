@@ -52,6 +52,25 @@ wf=need('.github/workflows/build-all.yml').read_text('utf-8')
 for token in ['build-android','build-windows','windows-latest','ubuntu-latest']:
     if token not in wf: errors.append(f'unified workflow missing {token}')
 
+# Android compileSdk/dependency compatibility regression guard.
+gradle_text=need('android/app/build.gradle.kts').read_text('utf-8')
+if 'compileSdk = 35' in gradle_text:
+    if 'androidx.core:core-ktx:1.17.0' in gradle_text:
+        errors.append('Android compileSdk 35 cannot use androidx.core 1.17.0 (requires API 36)')
+    if 'androidx.activity:activity-compose:1.11.0' in gradle_text:
+        errors.append('Android compileSdk 35 cannot use androidx.activity 1.11.0 (requires API 36)')
+if 'androidx.core:core-ktx:1.16.0' not in gradle_text:
+    errors.append('Android core-ktx compatibility pin 1.16.0 missing')
+if 'androidx.activity:activity-compose:1.10.1' not in gradle_text:
+    errors.append('Android activity-compose compatibility pin 1.10.1 missing')
+if 'resolutionStrategy.force' not in gradle_text:
+    errors.append('Android API-35 transitive dependency force guard missing')
+wf_text=need('.github/workflows/build-all.yml').read_text('utf-8')
+if 'inputs.build_release' in wf_text:
+    errors.append('Unified workflow must build Android release automatically without user input')
+if 'sdkmanager "platforms;android-35"' not in wf_text:
+    errors.append('Unified workflow does not install Android API 35 explicitly')
+
 if errors:
     print('\n'.join('ERROR '+e for e in errors)); sys.exit(1)
 print('Unified repository validation OK')

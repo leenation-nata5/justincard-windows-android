@@ -4,6 +4,18 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// Keep API-35-compatible AndroidX artifacts pinned even if a transitive
+// dependency tries to pull the API-36-only releases.
+configurations.configureEach {
+    resolutionStrategy.force(
+        "androidx.core:core:1.16.0",
+        "androidx.core:core-ktx:1.16.0",
+        "androidx.activity:activity:1.10.1",
+        "androidx.activity:activity-ktx:1.10.1",
+        "androidx.activity:activity-compose:1.10.1",
+    )
+}
+
 android {
     namespace = "org.yugioh.kartenliste"
     compileSdk = 35
@@ -12,8 +24,8 @@ android {
         applicationId = "org.yugioh.kartenliste.yugiohkartenliste"
         minSdk = 24
         targetSdk = 35
-        versionCode = 14100
-        versionName = "14.1.0"
+        versionCode = 14101
+        versionName = "14.1.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -89,8 +101,8 @@ android {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.17.0")
-    implementation("androidx.activity:activity-compose:1.11.0")
+    implementation("androidx.core:core-ktx:1.16.0")
+    implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")

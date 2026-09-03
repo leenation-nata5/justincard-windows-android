@@ -44,7 +44,7 @@ class GoogleCloudRepository(
         const val SETTING_SORT = "google_cloud_sort_field"
         const val SETTING_DIRECTION = "google_cloud_sort_direction"
         const val SETTING_AUTO_SYNC = "google_cloud_auto_sync"
-        const val ANDROID_VERSION = "14.1.0"
+        const val ANDROID_VERSION = "14.1.1"
     }
 
     data class Status(

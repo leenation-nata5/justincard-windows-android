@@ -1,6 +1,6 @@
 Just InCard – aktueller gemeinsamer Stand
 
-Android 14.1.0
+Android 14.1.1
 - Native editierbare Android-Quelle neu aus dem bereitgestellten APK/AAB-Release rekonstruiert.
 - Livebild-Funktion mit CameraX bleibt erhalten; ML Kit OCR und Touch-Fokus integriert.
 - Windows-kompatibler Google Drive/Sheets Sync mit gleichem AppData-Schema und gleicher XLSX-Vorlage.
@@ -17,3 +17,9 @@ Windows 1.2.7
 GitHub
 - Ein gemeinsames Repository baut Android und Windows parallel.
 - Android: APK/AAB/Logs; Windows: Portable ZIP/Installer/Logs.
+
+Android 14.1.1 Build-Hotfix
+- androidx.core von 1.17.0 auf 1.16.0 festgesetzt (compileSdk 35 kompatibel).
+- androidx.activity-compose von 1.11.0 auf 1.10.1 festgesetzt (compileSdk 35 kompatibel).
+- GitHub installiert Android SDK 35 / Build Tools 35.0.0 explizit.
+- Android Debug, Android CI Release APK/AAB und Windows werden ohne zusätzliche Auswahl automatisch gebaut.

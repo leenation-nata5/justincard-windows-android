@@ -2,11 +2,6 @@ name: Build Just InCard Android + Windows
 
 on:
   workflow_dispatch:
-    inputs:
-      build_release:
-        description: "Android Release APK/AAB zusätzlich bauen"
-        type: boolean
-        default: true
   push:
     branches: [main, master]
     tags: ["v*"]
@@ -17,7 +12,7 @@ permissions:
   contents: write
 
 env:
-  ANDROID_VERSION: "14.1.0"
+  ANDROID_VERSION: "14.1.1"
   WINDOWS_VERSION: "1.2.7"
 
 jobs:
@@ -35,7 +30,7 @@ jobs:
           python tools/test_android_contract.py
 
   build-android:
-    name: Android 14.1.0 / APK + AAB
+    name: Android 14.1.1 / APK + AAB
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -50,6 +45,16 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+
+      - name: Android SDK 35
+        uses: android-actions/setup-android@v3
+
+      - name: Android SDK Pakete installieren
+        shell: bash
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
 
       - name: Gradle 8.11.1
         uses: gradle/actions/setup-gradle@v4
@@ -100,11 +105,10 @@ jobs:
         run: gradle --no-daemon --stacktrace :app:assembleCiDebug 2>&1 | tee logs/assemble-debug.txt
 
       - name: CI Release APK und AAB bauen
-        if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_release == true }}
         run: gradle --no-daemon --stacktrace :app:assembleCiRelease :app:bundleCiRelease 2>&1 | tee logs/ci-release-build.txt
 
       - name: Produktions-Release APK und AAB bauen
-        if: ${{ steps.signing.outputs.production == 'true' && (github.event_name != 'workflow_dispatch' || inputs.build_release == true) }}
+        if: ${{ steps.signing.outputs.production == 'true' }}
         run: gradle --no-daemon --stacktrace :app:assembleProdRelease :app:bundleProdRelease 2>&1 | tee logs/production-release-build.txt
 
       - name: Android Artefakte sammeln

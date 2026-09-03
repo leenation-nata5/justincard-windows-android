@@ -2,7 +2,7 @@
 
 Dieses Repository baut beide Plattformen parallel:
 
-- **Android 14.1.0** – native Kotlin/Jetpack-Compose-App mit CameraX-Livebild und ML-Kit-Scanner
+- **Android 14.1.1** – native Kotlin/Jetpack-Compose-App mit CameraX-Livebild und ML-Kit-Scanner
 - **Windows Desktop 1.2.7** – aktuelle Windows-App auf Basis der bisherigen 1.2.6
 
 Die vom Nutzer bereitgestellte Android-Datei `JustInCard-Android-ci-release-3885c55.zip` enthielt nur fertig kompilierte APK-/AAB-Artefakte, keinen Quellcode. Deshalb ist der Android-Teil hier als neues, vollständig editierbares natives Quellprojekt aufgebaut. Die Kotlin-Namespace-Struktur bleibt `org.yugioh.kartenliste`; die Produktions-Paket-ID ist `org.yugioh.kartenliste.yugiohkartenliste` und die CI-Variante wie im Upload `org.yugioh.kartenliste.yugiohkartenliste.ci`. Die technische Basis verwendet Jetpack Compose, CameraX, ML Kit und Google-Login.
@@ -101,3 +101,8 @@ shared/     dokumentierter gemeinsamer Cloud-Vertrag
 tools/      gemeinsame Validierung
 .github/    paralleler Build-Workflow
 ```
+
+
+## Android 14.1.1 Build-Hotfix
+
+Der gemeinsame Workflow baut bei jedem Push und bei jedem manuellen Start automatisch **Android und Windows**. Eine separate Release-Auswahl ist nicht mehr nötig. Android bleibt auf `compileSdk 35`; deshalb sind `androidx.core` und `androidx.activity` bewusst auf API-35-kompatible Versionen festgesetzt. Der Workflow installiert Android SDK 35 und Build Tools 35.0.0 ausdrücklich vor dem Gradle-Build.
