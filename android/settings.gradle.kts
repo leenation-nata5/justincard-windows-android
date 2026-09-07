@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "JustInCard-Android"
+rootProject.name = "JustInCard"
 include(":app")

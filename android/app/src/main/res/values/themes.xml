@@ -1,8 +1,12 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <style name="Theme.JustInCard" parent="android:style/Theme.Material.NoActionBar">
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:statusBarColor">#07101F</item>
-        <item name="android:navigationBarColor">#07101F</item>
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.JustInCard" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item>
         <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:navigationBarColor">@color/jic_background</item>
+        <item name="android:statusBarColor">@color/jic_status_bar</item>
+        <item name="android:windowBackground">@color/jic_background</item>
+        <item name="android:windowNoTitle">true</item>
     </style>
 </resources>

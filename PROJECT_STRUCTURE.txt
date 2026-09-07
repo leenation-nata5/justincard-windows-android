@@ -1,10 +1,10 @@
 Just InCard – gemeinsames GitHub-Projekt
 
-android/  = natives Android-Projekt (Kotlin/Jetpack Compose, CameraX-Livebild, ML Kit, Google Cloud)
-windows/  = Windows Desktop-Projekt, UI/Funktionsstand der aktuellen Windows-App beibehalten
+android/  = Android 13.0.1 (gelieferte Kotlin/Compose-Basis, unverändertes CameraX-/ML-Kit-Livebild, Google-Sync)
+windows/  = unveränderter Windows-1.2.7-Quellbaum
 shared/   = gemeinsamer Cloud-/Datenvertrag für Windows <-> Android
 tools/    = plattformübergreifende Repository-Prüfungen
 .github/workflows/build-all.yml = paralleler GitHub-Actions-Build für Android + Windows
 
 GitHub erzeugt getrennte Artefakte und Logs für beide Plattformen.
-Die Google-Sheets-Vorlage liegt auf beiden Plattformen identisch bei.
+Die Google-Sheets-Vorlage und der private Cloud-Datenvertrag sind auf beiden Plattformen identisch.

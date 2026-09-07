@@ -1,90 +1,161 @@
+from __future__ import annotations
+
 from pathlib import Path
 import hashlib
 import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-errors=[]
+errors: list[str] = []
 
-def need(path):
-    p=ROOT/path
-    if not p.exists(): errors.append(f"missing {path}")
-    return p
 
-required=[
-    'android/app/build.gradle.kts','android/app/src/main/AndroidManifest.xml',
-    'android/app/src/main/java/org/yugioh/kartenliste/MainActivity.kt',
-    'android/app/src/main/java/org/yugioh/kartenliste/scanner/LiveScanner.kt',
-    'android/app/src/main/java/org/yugioh/kartenliste/cloud/GoogleCloudRepository.kt',
-    'android/app/src/main/java/org/yugioh/kartenliste/cloud/SheetTemplate.kt',
-    'android/app/src/main/java/org/yugioh/kartenliste/core/SetCode.kt',
-    'android/app/src/main/java/org/yugioh/kartenliste/core/DeckRules.kt',
-    'windows/justincard/cloud_sync.py','windows/justincard/version.py',
-    '.github/workflows/build-all.yml','shared/cloud-contract.md',
+def need(path: str) -> Path:
+    value = ROOT / path
+    if not value.is_file():
+        errors.append(f"missing {path}")
+    return value
+
+
+required = [
+    "android/app/build.gradle.kts",
+    "android/app/src/main/AndroidManifest.xml",
+    "android/app/src/main/assets/google_sheets_template.xlsx",
+    "android/app/src/main/java/org/yugioh/kartenliste/MainActivity.kt",
+    "android/app/src/main/java/org/yugioh/kartenliste/data/local/DeckStore.kt",
+    "android/app/src/main/java/org/yugioh/kartenliste/scanner/LiveCardAnalyzer.kt",
+    "android/app/src/main/java/org/yugioh/kartenliste/sync/CloudContract.kt",
+    "android/app/src/main/java/org/yugioh/kartenliste/sync/GoogleApiClient.kt",
+    "android/app/src/main/java/org/yugioh/kartenliste/sync/GoogleSheetsSyncEngine.kt",
+    "android/app/src/main/java/org/yugioh/kartenliste/sync/WindowsCloudCodec.kt",
+    "android/app/src/main/java/org/yugioh/kartenliste/sync/WindowsSheetTemplate.kt",
+    "android/app/src/main/java/org/yugioh/kartenliste/ui/screens/SettingsScreen.kt",
+    "android/ci/justincard-ci-test.keystore",
+    "windows/justincard/cloud_sync.py",
+    "windows/justincard/version.py",
+    ".github/workflows/build-all.yml",
+    "shared/cloud-contract.md",
 ]
-for x in required: need(x)
-
-wa=need('windows/assets/google_sheets_template.xlsx')
-aa=need('android/app/src/main/assets/google_sheets_template.xlsx')
-if wa.exists() and aa.exists() and hashlib.sha256(wa.read_bytes()).digest()!=hashlib.sha256(aa.read_bytes()).digest():
-    errors.append('Windows/Android google_sheets_template.xlsx differ')
-
-android_cloud=need('android/app/src/main/java/org/yugioh/kartenliste/core/CloudContract.kt').read_text('utf-8')
-windows_cloud=need('windows/justincard/cloud_sync.py').read_text('utf-8')
-for token in ['justincard-google-drive-backup-v4','justincard-cloud-backup-v125.json','collection-template-v1','Monsterkarten','Zauberkarten','Fallenkarten']:
-    if token not in android_cloud: errors.append(f'Android cloud contract missing {token}')
-    if token not in windows_cloud: errors.append(f'Windows cloud contract missing {token}')
-
-setcode=need('android/app/src/main/java/org/yugioh/kartenliste/core/SetCode.kt').read_text('utf-8')
-if 'englishReference' not in setcode or 'EN' not in setcode: errors.append('Android EN reference set-code contract missing')
-deck=need('android/app/src/main/java/org/yugioh/kartenliste/core/DeckRules.kt').read_text('utf-8')
-for token in ['fusion','synchro','xyz','link','SIDE']:
-    if token.lower() not in deck.lower(): errors.append(f'Android deck routing missing {token}')
-scanner=need('android/app/src/main/java/org/yugioh/kartenliste/scanner/LiveScanner.kt').read_text('utf-8')
-for token in ['PreviewView','ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST','TextRecognition','FocusMeteringAction']:
-    if token not in scanner: errors.append(f'Live scanner missing {token}')
-
-manifest=need('android/app/src/main/AndroidManifest.xml').read_text('utf-8')
-if 'android.permission.CAMERA' not in manifest: errors.append('CAMERA permission missing')
-if 'org.yugioh.kartenliste' not in need('android/app/build.gradle.kts').read_text('utf-8'): errors.append('Android package id changed')
-
-wf=need('.github/workflows/build-all.yml').read_text('utf-8')
-for token in ['build-android','build-windows','windows-latest','ubuntu-latest']:
-    if token not in wf: errors.append(f'unified workflow missing {token}')
-
-# Android compileSdk/dependency compatibility regression guard.
-gradle_text=need('android/app/build.gradle.kts').read_text('utf-8')
-if 'compileSdk = 35' in gradle_text:
-    if 'androidx.core:core-ktx:1.17.0' in gradle_text:
-        errors.append('Android compileSdk 35 cannot use androidx.core 1.17.0 (requires API 36)')
-    if 'androidx.activity:activity-compose:1.11.0' in gradle_text:
-        errors.append('Android compileSdk 35 cannot use androidx.activity 1.11.0 (requires API 36)')
-if 'androidx.core:core-ktx:1.16.0' not in gradle_text:
-    errors.append('Android core-ktx compatibility pin 1.16.0 missing')
-if 'androidx.activity:activity-compose:1.10.1' not in gradle_text:
-    errors.append('Android activity-compose compatibility pin 1.10.1 missing')
-if 'resolutionStrategy.force' not in gradle_text:
-    errors.append('Android API-35 transitive dependency force guard missing')
-wf_text=need('.github/workflows/build-all.yml').read_text('utf-8')
-if 'inputs.build_release' in wf_text:
-    errors.append('Unified workflow must build Android release automatically without user input')
-if 'sdkmanager "platforms;android-35"' not in wf_text:
-    errors.append('Unified workflow does not install Android API 35 explicitly')
-
-# Android 14.1.2 Kotlin compiler regression guards.
-if 'com.google.android.gms:play-services-auth:22.0.0' in gradle_text:
-    errors.append('play-services-auth 22.0.0 removes legacy GoogleSignIn client entry points used by this source')
-if 'com.google.android.gms:play-services-auth:21.4.0' not in gradle_text:
-    errors.append('Google Sign-In compatibility pin 21.4.0 missing')
-cloud_repo=need('android/app/src/main/java/org/yugioh/kartenliste/cloud/GoogleCloudRepository.kt').read_text('utf-8')
-display_prefs=need('android/app/src/main/java/org/yugioh/kartenliste/ui/DisplayPrefs.kt').read_text('utf-8')
-if 'private fun JsonArray?.orEmpty()' in cloud_repo:
-    errors.append('JsonArray.orEmpty shadows Kotlin String?.orEmpty and breaks type inference')
-if 'gson.fromJson<List<Map<String, Any?>>>' not in cloud_repo:
-    errors.append('Explicit Gson generic type for cloud collection/decks missing')
-if 'gson.fromJson<Map<String, Map<String, Boolean>>>' not in display_prefs:
-    errors.append('Explicit Gson generic type for display profiles missing')
+for item in required:
+    need(item)
 
 if errors:
-    print('\n'.join('ERROR '+e for e in errors)); sys.exit(1)
-print('Unified repository validation OK')
+    print("\n".join(f"ERROR {error}" for error in errors))
+    raise SystemExit(1)
+
+windows_asset = need("windows/assets/google_sheets_template.xlsx")
+android_asset = need("android/app/src/main/assets/google_sheets_template.xlsx")
+asset_hash = hashlib.sha256(android_asset.read_bytes()).hexdigest()
+if asset_hash != "0cb4633fe1abcec31ee5d9fddf533987cdb7fa9f8c84e7b45d282c6a135c7fd7":
+    errors.append("Android Google-Sheets template hash changed")
+if android_asset.read_bytes() != windows_asset.read_bytes():
+    errors.append("Windows/Android google_sheets_template.xlsx differ")
+
+android_cloud = need(
+    "android/app/src/main/java/org/yugioh/kartenliste/sync/CloudContract.kt"
+).read_text("utf-8")
+windows_cloud = need("windows/justincard/cloud_sync.py").read_text("utf-8")
+for token in [
+    "justincard-google-drive-backup-v4",
+    "justincard-cloud-backup-v125.json",
+    "collection-template-v1",
+    "Monsterkarten",
+    "Zauberkarten",
+    "Fallenkarten",
+]:
+    if token not in android_cloud:
+        errors.append(f"Android cloud contract missing {token}")
+    if token not in windows_cloud:
+        errors.append(f"Windows cloud contract missing {token}")
+
+gradle = need("android/app/build.gradle.kts").read_text("utf-8")
+for token in [
+    'compileSdk = 36',
+    'targetSdk = 36',
+    'versionName = "13.0.1"',
+    'play-services-auth:22.0.0',
+    'GOOGLE_DRIVE_API_BASE',
+    'GOOGLE_DRIVE_UPLOAD_BASE',
+    'GOOGLE_SHEETS_API_BASE',
+    'signingConfigs.getByName("ciTest")',
+]:
+    if token not in gradle:
+        errors.append(f"Android build configuration missing {token}")
+
+workflow = need(".github/workflows/build-all.yml").read_text("utf-8")
+for token in [
+    "build-android:",
+    "build-windows:",
+    "windows-latest",
+    "ubuntu-latest",
+    'ANDROID_VERSION: "13.0.1"',
+    'sdkmanager "platforms;android-36"',
+    'gradle-version: "9.5.0"',
+    ":app:testDebugUnitTest :app:lintDebug",
+    ":app:assembleCiRelease :app:bundleCiRelease",
+]:
+    if token not in workflow:
+        errors.append(f"unified workflow missing {token}")
+
+deck_store = need(
+    "android/app/src/main/java/org/yugioh/kartenliste/data/local/DeckStore.kt"
+).read_text("utf-8")
+upsert = re.search(
+    r"private fun upsertDeck\(.*?(?=\n    private fun)",
+    deck_store,
+    flags=re.DOTALL,
+)
+if not upsert or 'db.update("decks"' not in upsert.group(0):
+    errors.append("Deck upsert must update its parent row without replacing it")
+if upsert and "CONFLICT_REPLACE" in upsert.group(0):
+    errors.append("Deck parent upsert still uses CONFLICT_REPLACE and can cascade-delete cards")
+add_card = re.search(
+    r"fun addFromCollection\(.*?(?=\n    fun setCardQuantity)",
+    deck_store,
+    flags=re.DOTALL,
+)
+for token in ["beginTransaction()", "upsertCard(db, updated)", "touchDeck(db, deckId, deviceId)"]:
+    if not add_card or token not in add_card.group(0):
+        errors.append(f"transactional deck-card fix missing {token}")
+
+google_api = need(
+    "android/app/src/main/java/org/yugioh/kartenliste/sync/GoogleApiClient.kt"
+).read_text("utf-8")
+for token in [
+    "BuildConfig.GOOGLE_DRIVE_API_BASE",
+    "BuildConfig.GOOGLE_DRIVE_UPLOAD_BASE",
+    "BuildConfig.GOOGLE_SHEETS_API_BASE",
+    "appDataFolder",
+    "replaceVisibleWorkbook",
+]:
+    if token not in google_api:
+        errors.append(f"Google API integration missing {token}")
+if "GOOGLE_API_BASE" in google_api:
+    errors.append("Google API client still uses the broken shared Drive/Sheets base URL")
+
+settings = need(
+    "android/app/src/main/java/org/yugioh/kartenliste/ui/screens/SettingsScreen.kt"
+).read_text("utf-8")
+for token in [
+    "Google-Sheets-URL oder Tabellen-ID",
+    "Cloud speichern",
+    "Cloud laden",
+    "Jetzt synchronisieren",
+]:
+    if token not in settings:
+        errors.append(f"Google synchronization UI missing {token}")
+
+# Windows must remain byte-for-byte identical to the supplied 1.2.7 source tree.
+aggregate = hashlib.sha256()
+for path in sorted((ROOT / "windows").rglob("*")):
+    if path.is_file():
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        relative = path.relative_to(ROOT).as_posix()
+        aggregate.update(f"{digest}  {relative}\n".encode())
+if aggregate.hexdigest() != "db6bfd8fa4013a38d59ab121aafc4f0fb1f6fa5cb3dc4f5ab7397d1074d6acc3":
+    errors.append("Windows 1.2.7 source tree changed")
+
+if errors:
+    print("\n".join(f"ERROR {error}" for error in errors))
+    sys.exit(1)
+print("Unified repository validation OK")
+

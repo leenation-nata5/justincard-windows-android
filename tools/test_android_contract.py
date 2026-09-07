@@ -1,35 +1,65 @@
 from pathlib import Path
+import hashlib
+import re
 
-ROOT=Path(__file__).resolve().parents[1]
-SRC=ROOT/'android/app/src/main/java/org/yugioh/kartenliste'
-app=(SRC/'ui/App.kt').read_text('utf-8')
-cloud=(SRC/'cloud/GoogleCloudRepository.kt').read_text('utf-8')
-mapper=(SRC/'cloud/CloudMapper.kt').read_text('utf-8')
-scanner=(SRC/'scanner/LiveScanner.kt').read_text('utf-8')
-ygo=(SRC/'network/YgoApi.kt').read_text('utf-8')
-db=(SRC/'data/Database.kt').read_text('utf-8')
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "android/app/src/main/java/org/yugioh/kartenliste"
 
-assert 'Tausch' not in app
-assert 'Wunschliste' not in app
-assert 'LiveScanner' in app and 'PreviewView' in scanner
-assert 'ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST' in scanner
-assert 'originalCode' in ygo and 'englishReference' in ygo
-assert 'requestedPrintCode = requestedCode' in (SRC/'ui/JustInCardViewModel.kt').read_text('utf-8')
-assert 'DeckRules.allowedZone' in db
-assert 'syncBidirectional' in cloud
-assert 'appDataFolder' in cloud
-assert 'google_sheets_template.xlsx' in cloud
-assert 'CloudMapper.mergeCollection' in cloud
-assert 'CloudMapper.mergeDecks' in cloud
-assert 'drive.file' in (SRC/'core/CloudContract.kt').read_text('utf-8')
-assert 'drive.appdata' in (SRC/'core/CloudContract.kt').read_text('utf-8')
+expected_live_hashes = {
+    "scanner/LiveCardAnalyzer.kt": "4e7b694f11cbfb1f4e28e5647b4e8463188af8c3f4d423defa7bdfb608af185c",
+    "scanner/OcrEngine.kt": "dc267856f05ae88dba74154004c34a6adc7ea4a93a61d3cf5709c946fe822d03",
+    "scanner/OcrSignalParser.kt": "c1bb3c4bc919dd2774fae1fde6f7d4b08b150782c1549d7ffa79138638560cc5",
+    "ui/screens/ScanScreen.kt": "8d0af8fdfb285c7315d80e5250d851554dddc41b56f338b6127c7b19091082a3",
+    "ui/components/LiveCameraPreview.kt": "2db04a4124042286c094ca722fc315d5c5fc2d6a99fd86da9faa09a4802e3f74",
+    "ui/ScanViewModel.kt": "6b89b4d5b226ca263f5bc18a676637bec5863b7e2fe7033ab667e8db4395ca78",
+}
+for relative, expected in expected_live_hashes.items():
+    actual = hashlib.sha256((SRC / relative).read_bytes()).hexdigest()
+    assert actual == expected, f"Livebild source changed: {relative}"
 
-gradle=(ROOT/'android/app/build.gradle.kts').read_text('utf-8')
-display=(SRC/'ui/DisplayPrefs.kt').read_text('utf-8')
-assert 'play-services-auth:21.4.0' in gradle
-assert 'play-services-auth:22.0.0' not in gradle
-assert 'gson.fromJson<List<Map<String, Any?>>>' in cloud
-assert 'private fun JsonArray?.orEmpty()' not in cloud
-assert 'gson.fromJson<Map<String, Map<String, Boolean>>>' in display
+main = (SRC / "MainActivity.kt").read_text("utf-8")
+for destination in ["SEARCH", "COLLECTION", "SCAN", "DECKS", "SETTINGS"]:
+    assert f"Destination.{destination}" in main
+assert "ScanScreen(" in main
+assert "SettingsScreen(" in main
 
-print('Android source contract OK')
+auth = (SRC / "sync/GoogleAuthorizationManager.kt").read_text("utf-8")
+contract = (SRC / "sync/CloudContract.kt").read_text("utf-8")
+client = (SRC / "sync/GoogleApiClient.kt").read_text("utf-8")
+engine = (SRC / "sync/GoogleSheetsSyncEngine.kt").read_text("utf-8")
+codec = (SRC / "sync/WindowsCloudCodec.kt").read_text("utf-8")
+template = (SRC / "sync/WindowsSheetTemplate.kt").read_text("utf-8")
+settings = (SRC / "ui/SettingsViewModel.kt").read_text("utf-8")
+
+assert "CloudContract.SCOPES.map(::Scope)" in auth
+for scope in ["spreadsheets", "drive.file", "drive.appdata", "drive.metadata.readonly"]:
+    assert scope in contract
+for action in ["suspend fun save(", "suspend fun load(", "suspend fun sync("]:
+    assert action in engine
+for action in ["saveToGoogle", "loadFromGoogle", "linkSpreadsheet"]:
+    assert action in settings
+assert "justincard-cloud-backup-v125.json" in contract
+assert "appDataFolder" in client
+assert "WindowsCloudCodec.encode" in engine
+assert "WindowsCloudCodec.decode" in engine
+assert "WindowsSheetTemplate.workbook" in engine
+assert '"collection_key"' in codec and '"decks"' in codec
+assert "Empfänger" in template
+assert "JIC_COLLECTION" not in client
+assert "JIC_DECKS" not in client
+assert "JIC_DEVICES" not in client
+
+deck_store = (SRC / "data/local/DeckStore.kt").read_text("utf-8")
+upsert = re.search(
+    r"private fun upsertDeck\(.*?(?=\n    private fun)",
+    deck_store,
+    flags=re.DOTALL,
+)
+assert upsert is not None
+assert 'db.update("decks"' in upsert.group(0)
+assert "CONFLICT_REPLACE" not in upsert.group(0)
+assert "beginTransaction()" in deck_store
+assert "touchDeck(db, deckId, deviceId)" in deck_store
+
+print("Android source contract OK")
+

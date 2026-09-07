@@ -1,13 +1,10 @@
-Reference upload: JustInCard-Android-ci-release-3885c55.zip
-SHA-256: a79ddd7f1e30032ff8b8ba3a3c1da89edf771e9dd29d8bb5d6778c7dfe47dbba
+Android source basis: JustInCard_v13_0_0_GitHub_buildfix8_20260830(2).zip
+SHA-256: fb68c6bda5f0d9d918a28f9a4351de74e2ed71f96993cd309c1b40c3431e824f
 
-The upload contains compiled release artifacts only, not the original source tree:
-- AAB SHA-256: d66c11f74e19a3fa07333371f2b64b27230ec02d6ae86945e2064fd667ea19d1
-- APK SHA-256: 1717504f3898321d5ab94daa13da4a74a268f3e8a1a5b02234ba874766788d89
+The Android 13 Kotlin/Jetpack Compose source tree from this upload is the basis
+for Android 13.0.1. Its navigation, CameraX live preview, ML Kit OCR pipeline,
+scanner screen and scan ViewModel are retained byte-for-byte.
 
-Observed application package / technology reference used for the source rebuild:
-- org.yugioh.kartenliste
-- native Android / Jetpack Compose
-- CameraX live camera
-- ML Kit text recognition
-- Google Play Services authentication
+Only the requested Google collection synchronization and the deck-card
+persistence correction are layered onto this source basis.
+
