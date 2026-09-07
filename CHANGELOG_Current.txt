@@ -1,6 +1,6 @@
 Just InCard – aktueller gemeinsamer Stand
 
-Android 13.0.1
+Android 13.0.2
 - Basis auf die bereitgestellte native Android-Version 13.0.0 umgestellt.
 - Aufbau, Navigation sowie Livebild-/CameraX-/ML-Kit-Dateien unverändert erhalten.
 - Moderne Google-Autorisierung und getrennte UI-Aktionen für Verbinden, Cloud speichern, Cloud laden und beidseitiges Synchronisieren ergänzt.
@@ -9,14 +9,14 @@ Android 13.0.1
 - Vorhandene Tabelle kann über Trefferliste, URL oder ID verbunden werden.
 - Fehler beim Hinzufügen von Sammlungskarten zu Decks behoben: Das Eltern-Deck wird nicht mehr per SQLite REPLACE neu angelegt und löscht deshalb die soeben hinzugefügte Deckkarte nicht mehr.
 - Deck-Hinzufügen läuft transaktional und bestätigt die tatsächlich gespeicherte Karte in der UI.
-- Version auf 13.0.1 / VersionCode 13001 gesetzt.
+- Kotlin-Kompilierungsfehler in GoogleApiClient behoben: Eine fehlende HTTP-Antwort wird jetzt typsicher als leeres ByteArray behandelt.
+- Version auf 13.0.2 / VersionCode 13002 gesetzt.
 - Stabile CI-Testsignatur für die getrennte .ci-Paket-ID ergänzt.
 
 Windows 1.2.7
 - Quellbaum und Funktionen unverändert beibehalten.
 
 GitHub
-- Gemeinsamer Workflow auf Android API 36, Gradle 9.5.0 und die Android-13.0.1-Buildtypen angepasst.
+- Gemeinsamer Workflow auf Android API 36, Gradle 9.5.0 und die Android-13.0.2-Buildtypen angepasst.
 - Android und Windows werden weiterhin nach gemeinsamer Validierung parallel erstellt.
 - Android liefert Debug-APK, CI-Release-APK/AAB und optional produktiv signierte APK/AAB; Windows liefert Portable-ZIP und Installer.
-

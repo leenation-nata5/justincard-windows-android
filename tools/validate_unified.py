@@ -71,7 +71,8 @@ gradle = need("android/app/build.gradle.kts").read_text("utf-8")
 for token in [
     'compileSdk = 36',
     'targetSdk = 36',
-    'versionName = "13.0.1"',
+    'versionCode = 13002',
+    'versionName = "13.0.2"',
     'play-services-auth:22.0.0',
     'GOOGLE_DRIVE_API_BASE',
     'GOOGLE_DRIVE_UPLOAD_BASE',
@@ -87,7 +88,7 @@ for token in [
     "build-windows:",
     "windows-latest",
     "ubuntu-latest",
-    'ANDROID_VERSION: "13.0.1"',
+    'ANDROID_VERSION: "13.0.2"',
     'sdkmanager "platforms;android-36"',
     'gradle-version: "9.5.0"',
     ":app:testDebugUnitTest :app:lintDebug",
@@ -131,6 +132,10 @@ for token in [
         errors.append(f"Google API integration missing {token}")
 if "GOOGLE_API_BASE" in google_api:
     errors.append("Google API client still uses the broken shared Drive/Sheets base URL")
+if "stream?.use { it.readBytes() }.orEmpty()" in google_api:
+    errors.append("Google API response still calls unsupported ByteArray?.orEmpty()")
+if "stream?.use { it.readBytes() } ?: byteArrayOf()" not in google_api:
+    errors.append("Google API empty-response fallback is missing")
 
 settings = need(
     "android/app/src/main/java/org/yugioh/kartenliste/ui/screens/SettingsScreen.kt"
@@ -158,4 +163,3 @@ if errors:
     print("\n".join(f"ERROR {error}" for error in errors))
     sys.exit(1)
 print("Unified repository validation OK")
-

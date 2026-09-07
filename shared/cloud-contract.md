@@ -1,6 +1,6 @@
 # Just InCard Cross-Platform Cloud Contract
 
-Windows 1.2.7 and Android 13.0.1 deliberately use the same Google data contract.
+Windows 1.2.7 and Android 13.0.2 deliberately use the same Google data contract.
 
 - Windows OAuth scopes: `drive.file`, `drive.appdata`
 - Android OAuth scopes: `spreadsheets`, `drive.file`, `drive.appdata`, `drive.metadata.readonly`

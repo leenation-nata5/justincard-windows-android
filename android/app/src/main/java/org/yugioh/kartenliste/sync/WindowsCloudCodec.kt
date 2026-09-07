@@ -31,7 +31,7 @@ object WindowsCloudCodec {
         cards: Map<CardKey, Card>,
     ): JSONObject = JSONObject()
         .put("schema", CloudContract.CLOUD_SCHEMA)
-        .put("app_version", "13.0.1")
+        .put("app_version", "13.0.2")
         .put("updated_at", utcNow())
         .put("device", deviceName)
         .put("spreadsheet_id", CloudContract.normalizeSpreadsheetId(spreadsheetId))

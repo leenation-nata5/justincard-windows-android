@@ -316,7 +316,7 @@ class GoogleApiClient(private val accessToken: String) {
             body?.let { bytes -> connection.outputStream.use { it.write(bytes) } }
             val status = connection.responseCode
             val stream = if (status in 200..299) connection.inputStream else connection.errorStream
-            val response = stream?.use { it.readBytes() }.orEmpty()
+            val response = stream?.use { it.readBytes() } ?: byteArrayOf()
             if (status !in 200..299) {
                 val message = runCatching {
                     JSONObject(String(response, StandardCharsets.UTF_8))

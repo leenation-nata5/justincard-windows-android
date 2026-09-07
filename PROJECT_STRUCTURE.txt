@@ -1,6 +1,6 @@
 Just InCard – gemeinsames GitHub-Projekt
 
-android/  = Android 13.0.1 (gelieferte Kotlin/Compose-Basis, unverändertes CameraX-/ML-Kit-Livebild, Google-Sync)
+android/  = Android 13.0.2 (gelieferte Kotlin/Compose-Basis, unverändertes CameraX-/ML-Kit-Livebild, Google-Sync)
 windows/  = unveränderter Windows-1.2.7-Quellbaum
 shared/   = gemeinsamer Cloud-/Datenvertrag für Windows <-> Android
 tools/    = plattformübergreifende Repository-Prüfungen
