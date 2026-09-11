@@ -1,7 +1,6 @@
 package org.yugioh.kartenliste
 
 import android.Manifest
-import android.app.Activity
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
@@ -211,8 +210,9 @@ private fun JustInCardApp(
 
     val googleAuthorization = remember(activity) { GoogleAuthorizationManager(activity) }
     val googleResolution = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) googleAuthorization.handleResult(result.data)
-        else googleAuthorization.cancel()
+        // AuthorizationClient encodes success and errors in the returned Intent.
+        // The Activity result code must not be used as an early cancellation gate.
+        googleAuthorization.handleResult(result.data)
     }
     val authorizeGoogle = {
         googleAuthorization.authorize(

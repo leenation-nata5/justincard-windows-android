@@ -22,6 +22,9 @@ for destination in ["SEARCH", "COLLECTION", "SCAN", "DECKS", "SETTINGS"]:
     assert f"Destination.{destination}" in main
 assert "ScanScreen(" in main
 assert "SettingsScreen(" in main
+assert "googleAuthorization.handleResult(result.data)" in main
+assert "result.resultCode" not in main
+assert "Activity.RESULT_OK" not in main
 
 auth = (SRC / "sync/GoogleAuthorizationManager.kt").read_text("utf-8")
 contract = (SRC / "sync/CloudContract.kt").read_text("utf-8")
@@ -32,6 +35,8 @@ template = (SRC / "sync/WindowsSheetTemplate.kt").read_text("utf-8")
 settings = (SRC / "ui/SettingsViewModel.kt").read_text("utf-8")
 
 assert "CloudContract.SCOPES.map(::Scope)" in auth
+assert "client.getAuthorizationResultFromIntent(data)" in auth
+assert "CommonStatusCodes.DEVELOPER_ERROR" in auth
 for scope in ["spreadsheets", "drive.file", "drive.appdata", "drive.metadata.readonly"]:
     assert scope in contract
 for action in ["suspend fun save(", "suspend fun load(", "suspend fun sync("]:
@@ -61,5 +66,9 @@ assert "CONFLICT_REPLACE" not in upsert.group(0)
 assert "beginTransaction()" in deck_store
 assert "touchDeck(db, deckId, deviceId)" in deck_store
 
-print("Android source contract OK")
+search_screen = (SRC / "ui/screens/SearchScreen.kt").read_text("utf-8")
+assert "rememberModalBottomSheetState(skipPartiallyExpanded = true)" in search_screen
+assert "sheetGesturesEnabled = false" in search_screen
+assert "dragHandle = null" in search_screen
 
+print("Android source contract OK")

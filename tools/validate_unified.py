@@ -24,11 +24,13 @@ required = [
     "android/app/src/main/java/org/yugioh/kartenliste/data/local/DeckStore.kt",
     "android/app/src/main/java/org/yugioh/kartenliste/scanner/LiveCardAnalyzer.kt",
     "android/app/src/main/java/org/yugioh/kartenliste/sync/CloudContract.kt",
+    "android/app/src/main/java/org/yugioh/kartenliste/sync/GoogleAuthorizationManager.kt",
     "android/app/src/main/java/org/yugioh/kartenliste/sync/GoogleApiClient.kt",
     "android/app/src/main/java/org/yugioh/kartenliste/sync/GoogleSheetsSyncEngine.kt",
     "android/app/src/main/java/org/yugioh/kartenliste/sync/WindowsCloudCodec.kt",
     "android/app/src/main/java/org/yugioh/kartenliste/sync/WindowsSheetTemplate.kt",
     "android/app/src/main/java/org/yugioh/kartenliste/ui/screens/SettingsScreen.kt",
+    "android/app/src/main/java/org/yugioh/kartenliste/ui/screens/SearchScreen.kt",
     "android/ci/justincard-ci-test.keystore",
     "windows/justincard/cloud_sync.py",
     "windows/justincard/version.py",
@@ -71,8 +73,8 @@ gradle = need("android/app/build.gradle.kts").read_text("utf-8")
 for token in [
     'compileSdk = 36',
     'targetSdk = 36',
-    'versionCode = 13002',
-    'versionName = "13.0.2"',
+    'versionCode = 13003',
+    'versionName = "13.0.3"',
     'play-services-auth:22.0.0',
     'GOOGLE_DRIVE_API_BASE',
     'GOOGLE_DRIVE_UPLOAD_BASE',
@@ -88,7 +90,7 @@ for token in [
     "build-windows:",
     "windows-latest",
     "ubuntu-latest",
-    'ANDROID_VERSION: "13.0.2"',
+    'ANDROID_VERSION: "13.0.3"',
     'sdkmanager "platforms;android-36"',
     'gradle-version: "9.5.0"',
     ":app:testDebugUnitTest :app:lintDebug",
@@ -136,6 +138,35 @@ if "stream?.use { it.readBytes() }.orEmpty()" in google_api:
     errors.append("Google API response still calls unsupported ByteArray?.orEmpty()")
 if "stream?.use { it.readBytes() } ?: byteArrayOf()" not in google_api:
     errors.append("Google API empty-response fallback is missing")
+
+google_auth = need(
+    "android/app/src/main/java/org/yugioh/kartenliste/sync/GoogleAuthorizationManager.kt"
+).read_text("utf-8")
+main_activity = need(
+    "android/app/src/main/java/org/yugioh/kartenliste/MainActivity.kt"
+).read_text("utf-8")
+for token in [
+    "client.getAuthorizationResultFromIntent(data)",
+    "CommonStatusCodes.DEVELOPER_ERROR",
+    "completeSuccess(token)",
+]:
+    if token not in google_auth:
+        errors.append(f"Google authorization result handling missing {token}")
+if "result.resultCode" in main_activity or "Activity.RESULT_OK" in main_activity:
+    errors.append("Google authorization is still incorrectly gated by the Activity result code")
+if "googleAuthorization.handleResult(result.data)" not in main_activity:
+    errors.append("Google authorization result Intent is not forwarded")
+
+search_screen = need(
+    "android/app/src/main/java/org/yugioh/kartenliste/ui/screens/SearchScreen.kt"
+).read_text("utf-8")
+for token in [
+    "rememberModalBottomSheetState(skipPartiallyExpanded = true)",
+    "sheetGesturesEnabled = false",
+    "dragHandle = null",
+]:
+    if token not in search_screen:
+        errors.append(f"stable filter sheet configuration missing {token}")
 
 settings = need(
     "android/app/src/main/java/org/yugioh/kartenliste/ui/screens/SettingsScreen.kt"
