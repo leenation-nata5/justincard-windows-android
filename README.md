@@ -1,16 +1,17 @@
-# Just InCard – Android 13.0.3 und Windows 1.2.7
+# Just InCard – Android 13.0.4 und Windows 1.2.7
 
 Dieses gemeinsame Repository enthält:
 
-- **Android 13.0.3** – die bereitgestellte native Kotlin-/Compose-Version 13 mit unverändertem Aufbau und unverändertem CameraX-/ML-Kit-Livebild
+- **Android 13.0.4** – die bereitgestellte native Kotlin-/Compose-Version 13 mit unverändertem Aufbau und unverändertem CameraX-/ML-Kit-Livebild
 - **Windows 1.2.7** – vollständig und bytegleich aus der bereitgestellten gemeinsamen Version
 - einen GitHub-Actions-Workflow, der Android und Windows nach derselben Validierung parallel baut
 
-## Änderungen in Android 13.0.3
+## Änderungen in Android 13.0.4
 
 Nur die angeforderten Bereiche wurden ergänzt beziehungsweise korrigiert:
 
-- Google-Konto-Autorisierung über die moderne Android `AuthorizationClient`-API
+- Google-Konto-Autorisierung über die moderne Android `AuthorizationClient`-API, jetzt mit explizitem Google-Play-Services-Check, festem Kontoauswahldialog und direkter Diagnose von Paketname/SHA-1
+- Android fordert exakt dieselben minimalen Google-Berechtigungen wie Windows 1.2.7 an (`drive.file` und `drive.appdata`)
 - vorhandene Google-Sheets-Datei über Liste, URL oder Tabellen-ID verbinden
 - getrennte Aktionen **Cloud speichern**, **Cloud laden** und **Jetzt synchronisieren**
 - identischer sichtbarer Tabellenaufbau und identisches privates Drive-AppData-Backup wie Windows 1.2.7
@@ -19,6 +20,8 @@ Nur die angeforderten Bereiche wurden ergänzt beziehungsweise korrigiert:
 - Kotlin-Buildfehler beim Lesen einer leeren Google-API-Antwort korrigiert
 - das erweiterte Filterfenster bleibt beim Scrollen vollständig geöffnet und kann die Liste nicht mehr durch eigene Ziehgesten versetzen
 - die Antwort der Google-Autorisierung wird nach der Kontoauswahl direkt aus dem Ergebnis-Intent gelesen, statt vorzeitig als Abbruch verworfen zu werden
+- Status 8/`INTERNAL_ERROR` zeigt nun die exakte installierte Paket-ID und SHA-1-Signatur an, damit der passende Android-OAuth-Client ohne Rätselraten angelegt werden kann
+- die Windows-Desktop-OAuth-JSON wird absichtlich nicht als Android-Client missbraucht; Android verwendet Googles unterstützte Paketname+SHA-1-Identität
 - verständliche Hinweise für fehlende OAuth-Konfiguration, Netzwerkfehler und echte Abbrüche ergänzt
 
 Livebild, Scannerlogik, Navigation, Suchlogik, Sammlung und die übrige UI wurden nicht umgebaut. Die Validierung prüft die Livebild-/OCR-Quelldateien gegen die Original-Prüfsummen der gelieferten Android-13-Version.
@@ -56,7 +59,7 @@ Die bisherigen `ANDROID_…`-Varianten dieser vier Secrets werden ebenfalls akze
 ## Struktur
 
 ```text
-android/    Android-13.0.3-Quellprojekt
+android/    Android-13.0.4-Quellprojekt
 windows/    unverändertes Windows-1.2.7-Quellprojekt
 shared/     gemeinsamer Cloud-Datenvertrag
 tools/      gemeinsame Regressionstests

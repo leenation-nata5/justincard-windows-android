@@ -73,8 +73,8 @@ gradle = need("android/app/build.gradle.kts").read_text("utf-8")
 for token in [
     'compileSdk = 36',
     'targetSdk = 36',
-    'versionCode = 13003',
-    'versionName = "13.0.3"',
+    'versionCode = 13004',
+    'versionName = "13.0.4"',
     'play-services-auth:22.0.0',
     'GOOGLE_DRIVE_API_BASE',
     'GOOGLE_DRIVE_UPLOAD_BASE',
@@ -90,7 +90,7 @@ for token in [
     "build-windows:",
     "windows-latest",
     "ubuntu-latest",
-    'ANDROID_VERSION: "13.0.3"',
+    'ANDROID_VERSION: "13.0.4"',
     'sdkmanager "platforms;android-36"',
     'gradle-version: "9.5.0"',
     ":app:testDebugUnitTest :app:lintDebug",
@@ -148,6 +148,10 @@ main_activity = need(
 for token in [
     "client.getAuthorizationResultFromIntent(data)",
     "CommonStatusCodes.DEVELOPER_ERROR",
+    "CommonStatusCodes.INTERNAL_ERROR",
+    "AuthorizationRequest.Prompt.SELECT_ACCOUNT",
+    "GoogleApiAvailability",
+    "signingCertificateSha1",
     "completeSuccess(token)",
 ]:
     if token not in google_auth:
@@ -156,6 +160,12 @@ if "result.resultCode" in main_activity or "Activity.RESULT_OK" in main_activity
     errors.append("Google authorization is still incorrectly gated by the Activity result code")
 if "googleAuthorization.handleResult(result.data)" not in main_activity:
     errors.append("Google authorization result Intent is not forwarded")
+for required_scope in ["drive.file", "drive.appdata"]:
+    if required_scope not in android_cloud:
+        errors.append(f"Android OAuth scope missing {required_scope}")
+for forbidden_scope in ["drive.metadata.readonly", "https://www.googleapis.com/auth/spreadsheets"]:
+    if forbidden_scope in android_cloud:
+        errors.append(f"Android OAuth scope must match Windows and not request {forbidden_scope}")
 
 search_screen = need(
     "android/app/src/main/java/org/yugioh/kartenliste/ui/screens/SearchScreen.kt"

@@ -37,8 +37,14 @@ settings = (SRC / "ui/SettingsViewModel.kt").read_text("utf-8")
 assert "CloudContract.SCOPES.map(::Scope)" in auth
 assert "client.getAuthorizationResultFromIntent(data)" in auth
 assert "CommonStatusCodes.DEVELOPER_ERROR" in auth
-for scope in ["spreadsheets", "drive.file", "drive.appdata", "drive.metadata.readonly"]:
+assert "CommonStatusCodes.INTERNAL_ERROR" in auth
+assert "AuthorizationRequest.Prompt.SELECT_ACCOUNT" in auth
+assert "GoogleApiAvailability" in auth
+assert "signingCertificateSha1" in auth
+for scope in ["drive.file", "drive.appdata"]:
     assert scope in contract
+assert "drive.metadata.readonly" not in contract
+assert "https://www.googleapis.com/auth/spreadsheets" not in contract
 for action in ["suspend fun save(", "suspend fun load(", "suspend fun sync("]:
     assert action in engine
 for action in ["saveToGoogle", "loadFromGoogle", "linkSpreadsheet"]:

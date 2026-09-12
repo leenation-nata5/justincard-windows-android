@@ -254,7 +254,7 @@ fun SettingsScreen(
 
         item {
             Text(
-                "Just InCard Android 13.0.3 · native Kotlin/Compose-Neuaufbau",
+                "Just InCard Android 13.0.4 · native Kotlin/Compose-Neuaufbau",
                 modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

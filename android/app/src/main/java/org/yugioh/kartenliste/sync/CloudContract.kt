@@ -14,9 +14,9 @@ object CloudContract {
 
     const val DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file"
     const val DRIVE_APPDATA_SCOPE = "https://www.googleapis.com/auth/drive.appdata"
-    const val DRIVE_METADATA_SCOPE = "https://www.googleapis.com/auth/drive.metadata.readonly"
-    const val SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets"
-    val SCOPES = listOf(SHEETS_SCOPE, DRIVE_FILE_SCOPE, DRIVE_APPDATA_SCOPE, DRIVE_METADATA_SCOPE)
+    // Keep Android authorization identical to Windows 1.2.7. The Sheets API
+    // accepts drive.file for spreadsheets created/opened by this Google Cloud project.
+    val SCOPES = listOf(DRIVE_FILE_SCOPE, DRIVE_APPDATA_SCOPE)
 
     val MONSTER_HEADERS = listOf("Sterne", "Name", "Typ", "Element", "Kategorie", "Set-Code")
     val SPELL_HEADERS = listOf("Kategorie", "Name", "Set-Code")

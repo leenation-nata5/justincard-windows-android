@@ -1,17 +1,19 @@
 Just InCard – aktueller gemeinsamer Stand
 
-Android 13.0.3
-- Erweitertes Filterfenster auf eine vollständig geöffnete, feste Position umgestellt.
-- Eigene Ziehgesten des Filterfensters deaktiviert, damit nur noch der Filterinhalt scrollt und nicht mehr springt.
-- Google-Autorisierung wertet nach der Kontoauswahl immer Googles zurückgegebenes Ergebnis-Intent aus.
-- Die fehlerhafte Vorabwertung des Activity-Ergebniscodes, die eine gültige Antwort als Abbruch behandeln konnte, entfernt.
-- Rückmeldungen für fehlende Android-OAuth-Konfiguration, Netzwerkfehler und echte Abbrüche präzisiert.
-- Version auf 13.0.3 / VersionCode 13003 gesetzt.
+Android 13.0.4
+- Google-Autorisierung gegen Status 8/INTERNAL_ERROR gehärtet.
+- Vor dem OAuth-Start werden Google Play-Dienste geprüft; veraltete/defekte Play-Dienste werden verständlich gemeldet.
+- Google-Kontoauswahl wird bei jeder neuen Verbindung explizit geöffnet, statt einen möglicherweise veralteten Kontozustand wiederzuverwenden.
+- Android fordert jetzt exakt die gleichen minimalen OAuth-Berechtigungen wie Windows 1.2.7 an: drive.file und drive.appdata.
+- Status 8 und Status 10 nennen direkt den tatsächlich installierten Paketnamen und die SHA-1-Signatur der APK.
+- Die gelieferte Desktop-OAuth-JSON bleibt Windows vorbehalten; Android nutzt den von Google vorgesehenen OAuth-Client-Typ Android mit Paketname + SHA-1.
+- Livebild, Scanner, Suche, Sammlung, Decks, Layouts und übrige Funktionen bleiben unverändert.
+- Version auf 13.0.4 / VersionCode 13004 gesetzt.
 
 Windows 1.2.7
 - Quellbaum und Funktionen unverändert beibehalten.
 
 GitHub
-- Gemeinsamer Workflow auf Android API 36, Gradle 9.5.0 und die Android-13.0.3-Buildtypen angepasst.
+- Gemeinsamer Workflow auf Android 13.0.4 aktualisiert.
+- Build-Logs protokollieren weiterhin die tatsächlich verwendete SHA-1/SHA-256-Signatur des Android-Builds.
 - Android und Windows werden weiterhin nach gemeinsamer Validierung parallel erstellt.
-- Android liefert Debug-APK, CI-Release-APK/AAB und optional produktiv signierte APK/AAB; Windows liefert Portable-ZIP und Installer.
