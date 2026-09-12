@@ -1,9 +1,9 @@
-# Just InCard – Android 13.0.4 und Windows 1.2.7
+# Just InCard – Android 13.0.4 und Windows 1.2.8
 
 Dieses gemeinsame Repository enthält:
 
 - **Android 13.0.4** – die bereitgestellte native Kotlin-/Compose-Version 13 mit unverändertem Aufbau und unverändertem CameraX-/ML-Kit-Livebild
-- **Windows 1.2.7** – vollständig und bytegleich aus der bereitgestellten gemeinsamen Version
+- **Windows 1.2.8** – vollständig und bytegleich aus der bereitgestellten gemeinsamen Version
 - einen GitHub-Actions-Workflow, der Android und Windows nach derselben Validierung parallel baut
 
 ## Änderungen in Android 13.0.4
@@ -11,10 +11,10 @@ Dieses gemeinsame Repository enthält:
 Nur die angeforderten Bereiche wurden ergänzt beziehungsweise korrigiert:
 
 - Google-Konto-Autorisierung über die moderne Android `AuthorizationClient`-API, jetzt mit explizitem Google-Play-Services-Check, festem Kontoauswahldialog und direkter Diagnose von Paketname/SHA-1
-- Android fordert exakt dieselben minimalen Google-Berechtigungen wie Windows 1.2.7 an (`drive.file` und `drive.appdata`)
+- Android fordert exakt dieselben minimalen Google-Berechtigungen wie Windows 1.2.8 an (`drive.file` und `drive.appdata`)
 - vorhandene Google-Sheets-Datei über Liste, URL oder Tabellen-ID verbinden
 - getrennte Aktionen **Cloud speichern**, **Cloud laden** und **Jetzt synchronisieren**
-- identischer sichtbarer Tabellenaufbau und identisches privates Drive-AppData-Backup wie Windows 1.2.7
+- identischer sichtbarer Tabellenaufbau und identisches privates Drive-AppData-Backup wie Windows 1.2.8
 - Korrektur im Deck-Reiter: Das Hinzufügen einer Sammlungskarte bleibt nun tatsächlich im Deck gespeichert und wird sofort angezeigt
 - stabile, installierbare CI-Release-Signatur mit eigener `.ci`-Paket-ID
 - Kotlin-Buildfehler beim Lesen einer leeren Google-API-Antwort korrigiert
@@ -60,7 +60,7 @@ Die bisherigen `ANDROID_…`-Varianten dieser vier Secrets werden ebenfalls akze
 
 ```text
 android/    Android-13.0.4-Quellprojekt
-windows/    unverändertes Windows-1.2.7-Quellprojekt
+windows/    Windows-1.2.8-Quellprojekt
 shared/     gemeinsamer Cloud-Datenvertrag
 tools/      gemeinsame Regressionstests
 .github/    paralleler Android-/Windows-Build

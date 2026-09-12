@@ -38,18 +38,13 @@ jobs:
             requirements.txt
             requirements-build.txt
 
-      - name: Prepare optional Google OAuth client
+      - name: Verify bundled Google OAuth client
         shell: pwsh
-        env:
-          GOOGLE_OAUTH_CLIENT_JSON_B64: ${{ secrets.GOOGLE_OAUTH_CLIENT_JSON_B64 }}
         run: |
-          if (-not [string]::IsNullOrWhiteSpace($env:GOOGLE_OAUTH_CLIENT_JSON_B64)) {
-            $bytes = [Convert]::FromBase64String($env:GOOGLE_OAUTH_CLIENT_JSON_B64)
-            [IO.File]::WriteAllBytes((Join-Path $PWD "assets\google_oauth_client.json"), $bytes)
-            "Bundled Google OAuth desktop client: yes" | Set-Content logs\google-oauth-build.txt
-          } else {
-            "Bundled Google OAuth desktop client: no (runtime JSON selection remains available)" | Set-Content logs\google-oauth-build.txt
+          if (-not (Test-Path "assets\google_oauth_client.json")) {
+            throw "Fixed Google OAuth client is missing: assets\google_oauth_client.json"
           }
+          "Bundled fixed Google OAuth desktop client: yes" | Set-Content logs\google-oauth-build.txt
 
       - name: Show environment
         shell: pwsh

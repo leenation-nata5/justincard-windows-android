@@ -143,11 +143,11 @@ def test_google_cloud_modules_are_packaged_and_dependencies_present() -> None:
     requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
     main_text = (ROOT / "main.py").read_text(encoding="utf-8")
     validator = (ROOT / "tools/validate_repository.py").read_text(encoding="utf-8")
-    for module in ("justincard.cloud_sync", "justincard.v120_features", "justincard.v121_core", "justincard.v121_features", "justincard.v123_core", "justincard.v123_features"):
+    for module in ("justincard.cloud_sync", "justincard.v120_features", "justincard.v121_core", "justincard.v121_features", "justincard.v123_core", "justincard.v123_features", "justincard.v128_features"):
         assert f'"{module}"' in spec_text
     for package in ("google-api-python-client", "google-auth", "google-auth-oauthlib"):
         assert package in requirements
-    assert "install_v123_patches()" in main_text
+    assert "install_v128_patches()" in main_text
     assert '"justincard/cloud_sync.py"' in validator
     assert '"justincard/v120_features.py"' in validator
     assert '"justincard/v121_features.py"' in validator
@@ -186,7 +186,7 @@ def test_search_and_scanner_quantity_controls_are_packaged() -> None:
     assert "normalize_add_quantity(self.add_quantity.value())" in search_text
     assert "ScannerAddQuantity" in scanner_text
     assert "spin.setValue(1)" in scanner_text
-    assert "install_v123_patches()" in main_text
+    assert "install_v128_patches()" in main_text
 
 
 def test_google_cloud_uses_exact_user_template_and_private_backup():
@@ -246,7 +246,7 @@ def test_v123_deck_auto_zone_is_installed_and_manual_extra_button_hidden():
     assert "+ Side Deck" in feature_text
     assert "button.hide()" in feature_text
     assert "resolved_deck_zone" in database_patch
-    assert "install_v123_patches()" in main_text
+    assert "install_v128_patches()" in main_text
     assert '"justincard.v123_core"' in spec_text
     assert '"justincard.v123_features"' in spec_text
 
@@ -292,3 +292,19 @@ def test_v126_market_value_uses_cardmarket_reference_as_primary_anchor() -> None
     assert "if market_floor is not None:" in price_text
     assert "Cardmarket-Referenzpreis (EUR) über YGOPRODeck" in price_text
     assert 'source="Cardmarket-Referenz über YGOPRODeck + Set/Raritäts-Schätzung"' in price_text
+
+
+def test_v128_fixed_google_backup_preview_sort_and_search_contract() -> None:
+    feature = (ROOT / "justincard/v128_features.py").read_text(encoding="utf-8")
+    search = (ROOT / "justincard/ui/search_page.py").read_text(encoding="utf-8")
+    v108 = (ROOT / "justincard/v108_features.py").read_text(encoding="utf-8")
+    v120 = (ROOT / "justincard/v120_features.py").read_text(encoding="utf-8")
+    workflow = (ROOT / ".github/workflows/build-windows.yml").read_text(encoding="utf-8")
+    assert (ROOT / "assets/google_oauth_client.json").exists()
+    assert "Backup erstellen" in feature and "Backup laden" in feature
+    assert "CollectionCardPreview" in feature
+    assert '("added_at", "Hinzugefügt am")' in v108
+    assert "self.detail.set_card(cards[0], self.current_set_query)" in search
+    assert "application-bundled OAuth desktop" in v120
+    assert "Prepare optional Google OAuth client" not in workflow
+    assert "Verify bundled Google OAuth client" in workflow

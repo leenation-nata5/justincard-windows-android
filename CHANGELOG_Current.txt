@@ -1,19 +1,16 @@
-Just InCard – aktueller gemeinsamer Stand
+Just InCard – Aktueller Stand
+Windows 1.2.8 / Android 13.0.4
+
+Windows 1.2.8
+- Lokale ZIP-Backups können in den Einstellungen erstellt und wieder geladen werden.
+- Schnell aufeinanderfolgende Navigationsklicks werden entprellt und der globale Worker-Pool begrenzt, um UI-Lags beim Reiterwechsel zu reduzieren.
+- Nach jeder Suche wird garantiert der erste Treffer als erstes Vorschaubild angezeigt.
+- Sammlung kann nach dem tatsächlichen Hinzufügezeitpunkt auf- und absteigend sortiert werden; bestehende Einträge werden bei der Migration aus ihrem bisherigen Zeitstempel übernommen.
+- Die mitgelieferte Google-OAuth-Desktop-Datei ist fest in der Windows-App gebündelt und kann in der Oberfläche nicht mehr ausgetauscht werden.
+- Die Google-Oberfläche wurde auf Konto-Anmeldung und Laden der Sammlung reduziert; die passende Tabelle wird beim Laden automatisch gefunden oder erzeugt.
+- Sammlung besitzt jetzt eine Kartenvorschau für den aktuell ausgewählten Eintrag.
+- Marktwert bleibt farblich/fett hervorgehoben, verwendet aber dieselbe Schriftgröße wie die zugehörigen Informationen.
+- Mengenauswahl der Suche wird neben die Set-/Druckauswahl verschoben.
 
 Android 13.0.4
-- Google-Autorisierung gegen Status 8/INTERNAL_ERROR gehärtet.
-- Vor dem OAuth-Start werden Google Play-Dienste geprüft; veraltete/defekte Play-Dienste werden verständlich gemeldet.
-- Google-Kontoauswahl wird bei jeder neuen Verbindung explizit geöffnet, statt einen möglicherweise veralteten Kontozustand wiederzuverwenden.
-- Android fordert jetzt exakt die gleichen minimalen OAuth-Berechtigungen wie Windows 1.2.7 an: drive.file und drive.appdata.
-- Status 8 und Status 10 nennen direkt den tatsächlich installierten Paketnamen und die SHA-1-Signatur der APK.
-- Die gelieferte Desktop-OAuth-JSON bleibt Windows vorbehalten; Android nutzt den von Google vorgesehenen OAuth-Client-Typ Android mit Paketname + SHA-1.
-- Livebild, Scanner, Suche, Sammlung, Decks, Layouts und übrige Funktionen bleiben unverändert.
-- Version auf 13.0.4 / VersionCode 13004 gesetzt.
-
-Windows 1.2.7
-- Quellbaum und Funktionen unverändert beibehalten.
-
-GitHub
-- Gemeinsamer Workflow auf Android 13.0.4 aktualisiert.
-- Build-Logs protokollieren weiterhin die tatsächlich verwendete SHA-1/SHA-256-Signatur des Android-Builds.
-- Android und Windows werden weiterhin nach gemeinsamer Validierung parallel erstellt.
+- Unverändert gegenüber dem vorherigen Stand.

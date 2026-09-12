@@ -360,7 +360,9 @@ class SearchPage(QWidget):
         detail_layout.addWidget(self.detail)
 
         quantity_row = QHBoxLayout()
+        self._quantity_row = quantity_row
         quantity_label = QLabel("Menge")
+        self._quantity_label = quantity_label
         quantity_label.setObjectName("Muted")
         self.add_quantity = QSpinBox()
         self.add_quantity.setRange(1, MAX_ADD_QUANTITY)
@@ -446,7 +448,12 @@ class SearchPage(QWidget):
         self.model.set_cards(cards)
         self.result_label.setText(f"{len(cards):,} Treffer".replace(",", "."))
         if cards:
+            # Always show the first visible search result first. Relying only on
+            # selectionChanged can leave a stale preview when a new model is
+            # installed while the old row index is still selected.
+            self.table.clearSelection()
             self.table.selectRow(0)
+            self.detail.set_card(cards[0], self.current_set_query)
         else:
             self.detail.set_card(None)
         message = f"Suche abgeschlossen: {len(cards)} Treffer"

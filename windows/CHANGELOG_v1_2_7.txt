@@ -1,8 +1,0 @@
-Just InCard Windows Desktop 1.2.7
-
-- Cloud-Synchronisation für identische Drucke zwischen Windows und Android vereinheitlicht.
-- Plattformunabhängiger Canonical-Key verwendet Passcode, Set-Code, Rarity, Sprache und Artwork.
-- Verhindert doppelte Sammlungseinträge, wenn dieselbe Karte auf Windows und Android unterschiedliche lokale Datenbank-IDs besitzt.
-- Google-Sheets-Vorlage und privates appData-Backup bleiben kompatibel mit 1.2.5/1.2.6.
-- Alle Funktionen aus 1.2.6 bleiben erhalten.
-- Frische Windows-/Android-Installationen lösen die gemeinsame Spreadsheet-ID zusätzlich aus dem privaten appData-Backup auf, bevor eine neue Sheet-Datei erzeugt wird.

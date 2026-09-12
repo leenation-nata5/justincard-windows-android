@@ -427,16 +427,15 @@ def _add_google_cloud_settings(page: Any) -> None:
             status.setText(message)
 
     def cloud(interactive: bool = False) -> GoogleSheetsCloud:
-        path = str(oauth_path.text() or page.database.get_setting(CLIENT_SECRET_SETTING, "") or "")
-        if not path:
-            try:
-                from justincard.paths import resource_path
-                bundled = Path(resource_path("assets/google_oauth_client.json"))
-                if bundled.exists():
-                    path = str(bundled)
-            except Exception:
-                pass
-        service = GoogleSheetsCloud(path, default_token_path())
+        # v1.2.8: Windows always uses the application-bundled OAuth desktop
+        # client. The user cannot replace it from the UI or via a persisted
+        # path setting. This keeps sign-in identical on every installation.
+        from justincard.paths import resource_path
+        bundled = Path(resource_path("assets/google_oauth_client.json"))
+        if not bundled.is_file():
+            raise FileNotFoundError("Die fest integrierte Google-Anmeldedatei fehlt.")
+        oauth_path.setText(str(bundled))
+        service = GoogleSheetsCloud(str(bundled), default_token_path())
         if interactive:
             service.load_credentials(interactive=True)
         return service
@@ -619,19 +618,18 @@ def _add_google_cloud_settings(page: Any) -> None:
         run_task(action, success, "Sammlung wird zu Google Sheets hochgeladen …")
 
     def download() -> None:
-        identifier = current_sheet()
-        if not identifier:
-            QMessageBox.information(page, "Google Cloud", "Bitte zuerst die Cloud-Datei suchen/erstellen oder eine Sheet-URL einfügen.")
-            return
-
         def action() -> dict[str, Any]:
             service = cloud(False)
+            identifier = current_sheet()
+            if not identifier:
+                identifier = service.find_or_create_spreadsheet("")
             payload = service.download_cloud_payload(identifier)
             cloud_rows = list(payload.get("collection") or [])
             cloud_decks = list(payload.get("decks") or [])
             report = page.database.apply_cloud_collection(cloud_rows)
             deck_report = page.database.apply_cloud_decks(cloud_decks)
             return {
+                "spreadsheet_id": identifier,
                 "rows": len(cloud_rows),
                 "decks": len(cloud_decks),
                 **report,
@@ -642,6 +640,7 @@ def _add_google_cloud_settings(page: Any) -> None:
         def success(result: Any) -> None:
             _refresh_collection_windows(page.window())
             if isinstance(result, dict):
+                remember_sheet(str(result.get("spreadsheet_id") or ""))
                 finish(
                     f"Cloud-Sammlung geladen: {int(result.get('applied') or 0)} übernommen, "
                     f"{int(result.get('skipped') or 0)} übersprungen; "

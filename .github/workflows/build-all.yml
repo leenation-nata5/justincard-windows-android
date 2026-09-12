@@ -13,7 +13,7 @@ permissions:
 
 env:
   ANDROID_VERSION: "13.0.4"
-  WINDOWS_VERSION: "1.2.7"
+  WINDOWS_VERSION: "1.2.8"
 
 jobs:
   validate:
@@ -161,7 +161,7 @@ jobs:
           retention-days: 30
 
   build-windows:
-    name: Windows 1.2.7 / x64
+    name: Windows 1.2.8 / x64
     needs: validate
     runs-on: windows-latest
     timeout-minutes: 70

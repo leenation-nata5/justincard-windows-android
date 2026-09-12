@@ -77,6 +77,7 @@ COLLECTION_COLUMNS = (
     ("language", "Sprache"),
     ("artwork", "Artwork / Alt Art"),
     ("quantity", "Menge"),
+    ("added_at", "Hinzugefügt am"),
     ("condition", "Zustand"),
     ("market_value", "Geschätzter Marktwert"),
     ("id", "Passcode"),
@@ -135,7 +136,7 @@ COLUMN_VISIBILITY = {
     "status": "status",
 }
 
-NUMERIC_KEYS = {"id", "atk", "def", "level", "scale", "link", "owned", "quantity", "price", "market_value"}
+NUMERIC_KEYS = {"id", "atk", "def", "level", "scale", "link", "owned", "quantity", "price", "market_value", "added_at"}
 
 
 def _collection_card(record: dict[str, Any]) -> dict[str, Any]:
@@ -399,7 +400,11 @@ def _apply_table_visibility(table: QTableView, prefs: dict[str, bool], override:
         return
     columns = getattr(model, "COLUMNS", ())
     for index, (key, _label) in enumerate(columns):
-        if key in {"name", "zone"}:
+        # added_at is intentionally a sort-only field. It appears in the
+        # collection sort selector, but does not consume horizontal table space.
+        if key == "added_at":
+            visible = False
+        elif key in {"name", "zone"}:
             visible = True
         else:
             setting = COLUMN_VISIBILITY.get(key)

@@ -350,7 +350,7 @@ def _attach_price_panel(
     row.addStretch(1)
     result_label = QLabel("Noch nicht ermittelt")
     result_label.setWordWrap(True)
-    result_label.setStyleSheet("font-size: 16px; font-weight: 700;")
+    result_label.setStyleSheet("font-weight: 700; color: #f0c24b;")
     detail_label = QLabel("Set-/Raritätsabhängige Schätzung mit Live-Daten; Zustand wird transparent modelliert.")
     detail_label.setWordWrap(True)
     detail_label.setObjectName("Muted")

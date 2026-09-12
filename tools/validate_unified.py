@@ -34,6 +34,8 @@ required = [
     "android/ci/justincard-ci-test.keystore",
     "windows/justincard/cloud_sync.py",
     "windows/justincard/version.py",
+    "windows/justincard/v128_features.py",
+    "windows/assets/google_oauth_client.json",
     ".github/workflows/build-all.yml",
     "shared/cloud-contract.md",
 ]
@@ -190,15 +192,22 @@ for token in [
     if token not in settings:
         errors.append(f"Google synchronization UI missing {token}")
 
-# Windows must remain byte-for-byte identical to the supplied 1.2.7 source tree.
-aggregate = hashlib.sha256()
-for path in sorted((ROOT / "windows").rglob("*")):
-    if path.is_file():
-        digest = hashlib.sha256(path.read_bytes()).hexdigest()
-        relative = path.relative_to(ROOT).as_posix()
-        aggregate.update(f"{digest}  {relative}\n".encode())
-if aggregate.hexdigest() != "db6bfd8fa4013a38d59ab121aafc4f0fb1f6fa5cb3dc4f5ab7397d1074d6acc3":
-    errors.append("Windows 1.2.7 source tree changed")
+# Windows 1.2.8 intentionally extends the previously supplied 1.2.7 tree.
+windows_version = need("windows/justincard/version.py").read_text("utf-8")
+if 'APP_VERSION = "1.2.8"' not in windows_version:
+    errors.append("Windows version is not 1.2.8")
+windows_v128 = need("windows/justincard/v128_features.py").read_text("utf-8")
+for token in [
+    "Backup erstellen",
+    "Backup laden",
+    "CollectionCardPreview",
+    "install_v128_patches",
+]:
+    if token not in windows_v128:
+        errors.append(f"Windows 1.2.8 feature missing {token}")
+windows_search = need("windows/justincard/ui/search_page.py").read_text("utf-8")
+if "self.detail.set_card(cards[0], self.current_set_query)" not in windows_search:
+    errors.append("Windows first-result preview fix missing")
 
 if errors:
     print("\n".join(f"ERROR {error}" for error in errors))

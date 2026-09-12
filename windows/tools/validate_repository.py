@@ -42,8 +42,10 @@ REQUIRED = [
     "justincard/v121_features.py",
     "justincard/v123_core.py",
     "justincard/v123_features.py",
+    "justincard/v128_features.py",
     "justincard/ui/toast.py",
     "assets/google_sheets_template.xlsx",
+    "assets/google_oauth_client.json",
     "recovered/PYZ.pyz",
     "tests/test_search_core.py",
     "tests/test_build_configuration.py",
@@ -78,6 +80,7 @@ for relative in [
     "justincard/v121_features.py",
     "justincard/v123_core.py",
     "justincard/v123_features.py",
+    "justincard/v128_features.py",
     "justincard/ui/toast.py",
     "tools/materialize_recovered_modules.py",
     "tools/smoke_imports.py",
@@ -106,7 +109,7 @@ if "datas += Tree(" in spec_text:
     raise SystemExit("PyInstaller spec still mixes Tree TOC entries into Analysis(datas=...)")
 if 'datas.append((str(tess), "tesseract"))' not in spec_text:
     raise SystemExit("Correct Tesseract (source, destination) data mapping is missing")
-for module in ("justincard.v110_core", "justincard.v110_features", "justincard.cloud_sync", "justincard.v120_features", "justincard.v121_core", "justincard.v121_features", "justincard.v123_core", "justincard.v123_features"):
+for module in ("justincard.v110_core", "justincard.v110_features", "justincard.cloud_sync", "justincard.v120_features", "justincard.v121_core", "justincard.v121_features", "justincard.v123_core", "justincard.v123_features", "justincard.v128_features"):
     if f'"{module}"' not in spec_text:
         raise SystemExit(f"PyInstaller hidden import missing: {module}")
 
@@ -124,9 +127,11 @@ for token in [
 ]:
     if token not in workflow:
         raise SystemExit(f"Workflow token missing: {token}")
-for token in ["GOOGLE_OAUTH_CLIENT_JSON_B64", "assets\\google_oauth_client.json"]:
+for token in ["Verify bundled Google OAuth client", "assets\\google_oauth_client.json"]:
     if token not in workflow:
         raise SystemExit(f"Google OAuth workflow token missing: {token}")
+if "GOOGLE_OAUTH_CLIENT_JSON_B64" in workflow:
+    raise SystemExit("Build workflow must not override the fixed bundled OAuth client")
 
 build_script = (ROOT / "scripts/build_windows.ps1").read_text(encoding="utf-8")
 for token in [
@@ -204,7 +209,7 @@ for token in [
         raise SystemExit(f"Price token missing: {token}")
 
 main_text = (ROOT / "main.py").read_text(encoding="utf-8")
-if "install_v123_patches()" not in main_text:
+if "install_v128_patches()" not in main_text:
     raise SystemExit(f"Current v{APP_VERSION} feature patches are not installed from main.py")
 for token in [
     'APP_UI_SELF_TEST_FLAG = "--ui-self-test"',
