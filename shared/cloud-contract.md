@@ -1,9 +1,9 @@
 # Just InCard Cross-Platform Cloud Contract
 
-Windows 1.2.7 and Android 13.0.4 deliberately use the same Google data contract.
+Windows 1.2.9 and Android 13.0.6 deliberately use the same Google data contract.
 
 - Windows OAuth scopes: `drive.file`, `drive.appdata`
-- Android OAuth scopes: `drive.file`, `drive.appdata` (identisch zu Windows 1.2.7)
+- Android OAuth scopes: `drive.file`, `drive.appdata`, `spreadsheets` (13.0.6: expliziter Lese-/Schreibzugriff über die Sheets API)
 - Spreadsheet title: `Just InCard – Sammlung`
 - Spreadsheet app property: `justincard_cloud_type=collection-template-v1`
 - Visible template sheets: `Monsterkarten`, `Zauberkarten`, `Fallenkarten`

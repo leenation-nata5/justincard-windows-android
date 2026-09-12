@@ -1,6 +1,6 @@
-# Just InCard – Windows Desktop 1.2.8
+# Just InCard – Windows Desktop 1.2.9
 
-## Google-Sheets-Vorlage (neu in 1.2.8)
+## Google-Sheets-Vorlage (neu in 1.2.9)
 
 Für die browserlesbare Google-Sheets-Datei wird **ausschließlich** die vom Nutzer bereitgestellte Datei `Yugioh Excel Beispiel(1).xlsx` verwendet. Die Originaldatei liegt unverändert unter `assets/google_sheets_template.xlsx` und wird bei der ersten Cloud-Erstellung direkt nach Google Sheets konvertiert.
 
@@ -31,7 +31,7 @@ Für die Veröffentlichung gibt es zwei sinnvolle Google-Konfigurationen:
 - **Internal**: nur Benutzer derselben Google-Workspace-/Cloud-Identity-Organisation können die App autorisieren. Das eignet sich, wenn alle Benutzer zu deinem Unternehmen gehören.
 - **External**: Benutzer mit normalen Google-Konten können die App autorisieren. Im Status **Testing** müssen sie als Testnutzer eingetragen werden; für eine breitere Verteilung sollte die App auf **In production** gestellt werden.
 
-Seit 1.2.8 fordert Just InCard nur noch `drive.file` und `drive.appdata` an. Der frühere breite `spreadsheets`-Scope wird nicht mehr benötigt. Nach dem Update ist deshalb einmaliges erneutes Google-Anmelden erforderlich.
+Seit 1.2.9 fordert Just InCard nur noch `drive.file` und `drive.appdata` an. Der frühere breite `spreadsheets`-Scope wird nicht mehr benötigt. Nach dem Update ist deshalb einmaliges erneutes Google-Anmelden erforderlich.
 
 ### Einmalige Google-Cloud-Einrichtung
 
@@ -75,7 +75,7 @@ Der Workflow läuft auf `windows-latest` mit **Python 3.11** und erledigt automa
 1. Python-Abhängigkeiten installieren
 2. Tesseract OCR und Inno Setup installieren
 3. unveränderte Legacy-Module aus `recovered/PYZ.pyz` materialisieren
-4. Such-, Build- und v1.0.8–1.2.8-Regressionsprüfungen ausführen
+4. Such-, Build- und v1.0.8–1.2.9-Regressionsprüfungen ausführen
 5. Vorab-Importdiagnose ausführen und protokollieren
 6. Windows-App mit PyInstaller als `onedir` bauen
 7. die erzeugte `JustInCard.exe --self-test` ausführen
@@ -83,7 +83,7 @@ Der Workflow läuft auf `windows-latest` mit **Python 3.11** und erledigt automa
 9. Windows-Installer erzeugen
 10. SHA-256-Prüfsummen erzeugen
 11. Build-Dateien und Logs separat als Artifacts hochladen
-12. bei einem Tag wie `v1.2.8` zusätzlich einen GitHub Release erstellen
+12. bei einem Tag wie `v1.2.9` zusätzlich einen GitHub Release erstellen
 
 ### Build auf GitHub starten
 
@@ -137,7 +137,7 @@ justincard/v121_features.py             Scanner-Mengenwahl und Reset auf 1
 justincard/v123_core.py                 Deck-Zonen- und Google-Kategorienlogik
 justincard/v123_features.py             Automatische Main-/Extra-Deck-UI
 assets/google_oauth_client.example.json OAuth-Desktop-Beispielkonfiguration
-justincard/version.py                  Version 1.2.8
+justincard/version.py                  Version 1.2.9
 recovered/PYZ.pyz                      Recovery-Basis unveränderter Legacy-Module
 scripts/build_windows.ps1              PyInstaller/Portable-Build
 scripts/build_installer.ps1            Installer-Build
@@ -153,4 +153,4 @@ JustInCard.spec                         PyInstaller-Spezifikation
 
 ## Hinweis zur Recovery-Basis
 
-Der ursprüngliche Windows-Upload 1.0.3 enthielt die bereits kompilierte portable Anwendung und den Installer, aber nicht das ursprüngliche Python-Repository. Die unveränderten Altmodule werden deshalb weiterhin reproduzierbar aus dem extrahierten Python-3.11-PYZ wiederhergestellt. Die Suchverbesserungen sowie die UI-/Backup-Erweiterungen ab 1.0.8 und die neueren Anzeige-, Preis-, Alt-Art- und Google-Cloud-Funktionen bis 1.2.8 liegen offen und editierbar im Repository.
+Der ursprüngliche Windows-Upload 1.0.3 enthielt die bereits kompilierte portable Anwendung und den Installer, aber nicht das ursprüngliche Python-Repository. Die unveränderten Altmodule werden deshalb weiterhin reproduzierbar aus dem extrahierten Python-3.11-PYZ wiederhergestellt. Die Suchverbesserungen sowie die UI-/Backup-Erweiterungen ab 1.0.8 und die neueren Anzeige-, Preis-, Alt-Art- und Google-Cloud-Funktionen bis 1.2.9 liegen offen und editierbar im Repository.

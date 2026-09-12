@@ -75,8 +75,8 @@ gradle = need("android/app/build.gradle.kts").read_text("utf-8")
 for token in [
     'compileSdk = 36',
     'targetSdk = 36',
-    'versionCode = 13004',
-    'versionName = "13.0.4"',
+    'versionCode = 13006',
+    'versionName = "13.0.6"',
     'play-services-auth:22.0.0',
     'GOOGLE_DRIVE_API_BASE',
     'GOOGLE_DRIVE_UPLOAD_BASE',
@@ -92,7 +92,7 @@ for token in [
     "build-windows:",
     "windows-latest",
     "ubuntu-latest",
-    'ANDROID_VERSION: "13.0.4"',
+    'ANDROID_VERSION: "13.0.6"',
     'sdkmanager "platforms;android-36"',
     'gradle-version: "9.5.0"',
     ":app:testDebugUnitTest :app:lintDebug",
@@ -140,6 +140,14 @@ if "stream?.use { it.readBytes() }.orEmpty()" in google_api:
     errors.append("Google API response still calls unsupported ByteArray?.orEmpty()")
 if "stream?.use { it.readBytes() } ?: byteArrayOf()" not in google_api:
     errors.append("Google API empty-response fallback is missing")
+for token in [
+    "awaitSpreadsheetReady",
+    "SHEET_READY_RETRY_DELAYS_MS",
+    "TRANSIENT_RETRY_DELAYS_MS",
+    "Google Sheets verweigert den Zugriff",
+]:
+    if token not in google_api:
+        errors.append(f"Android 13.0.6 Google retry/permission fix missing {token}")
 
 google_auth = need(
     "android/app/src/main/java/org/yugioh/kartenliste/sync/GoogleAuthorizationManager.kt"
@@ -162,12 +170,14 @@ if "result.resultCode" in main_activity or "Activity.RESULT_OK" in main_activity
     errors.append("Google authorization is still incorrectly gated by the Activity result code")
 if "googleAuthorization.handleResult(result.data)" not in main_activity:
     errors.append("Google authorization result Intent is not forwarded")
-for required_scope in ["drive.file", "drive.appdata"]:
+for required_scope in ["drive.file", "drive.appdata", "https://www.googleapis.com/auth/spreadsheets"]:
     if required_scope not in android_cloud:
         errors.append(f"Android OAuth scope missing {required_scope}")
-for forbidden_scope in ["drive.metadata.readonly", "https://www.googleapis.com/auth/spreadsheets"]:
+for forbidden_scope in ["drive.metadata.readonly"]:
     if forbidden_scope in android_cloud:
-        errors.append(f"Android OAuth scope must match Windows and not request {forbidden_scope}")
+        errors.append(f"Android OAuth scope must not request {forbidden_scope}")
+if '"https://www.googleapis.com/auth/drive"' in android_cloud:
+    errors.append("Android OAuth scope must not request broad drive")
 
 search_screen = need(
     "android/app/src/main/java/org/yugioh/kartenliste/ui/screens/SearchScreen.kt"
@@ -188,14 +198,15 @@ for token in [
     "Cloud speichern",
     "Cloud laden",
     "Jetzt synchronisieren",
+    "onFreshGoogleToken",
 ]:
     if token not in settings:
         errors.append(f"Google synchronization UI missing {token}")
 
-# Windows 1.2.8 intentionally extends the previously supplied 1.2.7 tree.
+# Windows 1.2.9 intentionally extends the previously supplied 1.2.7 tree.
 windows_version = need("windows/justincard/version.py").read_text("utf-8")
-if 'APP_VERSION = "1.2.8"' not in windows_version:
-    errors.append("Windows version is not 1.2.8")
+if 'APP_VERSION = "1.2.9"' not in windows_version:
+    errors.append("Windows version is not 1.2.9")
 windows_v128 = need("windows/justincard/v128_features.py").read_text("utf-8")
 for token in [
     "Backup erstellen",
@@ -204,7 +215,7 @@ for token in [
     "install_v128_patches",
 ]:
     if token not in windows_v128:
-        errors.append(f"Windows 1.2.8 feature missing {token}")
+        errors.append(f"Windows 1.2.9 feature missing {token}")
 windows_search = need("windows/justincard/ui/search_page.py").read_text("utf-8")
 if "self.detail.set_card(cards[0], self.current_set_query)" not in windows_search:
     errors.append("Windows first-result preview fix missing")

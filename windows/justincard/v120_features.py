@@ -427,7 +427,7 @@ def _add_google_cloud_settings(page: Any) -> None:
             status.setText(message)
 
     def cloud(interactive: bool = False) -> GoogleSheetsCloud:
-        # v1.2.8: Windows always uses the application-bundled OAuth desktop
+        # v1.2.9: Windows always uses the application-bundled OAuth desktop
         # client. The user cannot replace it from the UI or via a persisted
         # path setting. This keeps sign-in identical on every installation.
         from justincard.paths import resource_path

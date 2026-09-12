@@ -14,9 +14,13 @@ object CloudContract {
 
     const val DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file"
     const val DRIVE_APPDATA_SCOPE = "https://www.googleapis.com/auth/drive.appdata"
-    // Keep Android authorization identical to Windows 1.2.7. The Sheets API
-    // accepts drive.file for spreadsheets created/opened by this Google Cloud project.
-    val SCOPES = listOf(DRIVE_FILE_SCOPE, DRIVE_APPDATA_SCOPE)
+    const val SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets"
+
+    // Android 13.0.6 requests the explicit Sheets scope in addition to the
+    // per-file Drive scopes. This makes reading and editing an existing shared
+    // Just-InCard spreadsheet independent from Drive's per-file authorization
+    // while the private appData backup remains protected by drive.appdata.
+    val SCOPES = listOf(DRIVE_FILE_SCOPE, DRIVE_APPDATA_SCOPE, SHEETS_SCOPE)
 
     val MONSTER_HEADERS = listOf("Sterne", "Name", "Typ", "Element", "Kategorie", "Set-Code")
     val SPELL_HEADERS = listOf("Kategorie", "Name", "Set-Code")

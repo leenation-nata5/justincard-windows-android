@@ -25,6 +25,7 @@ assert "SettingsScreen(" in main
 assert "googleAuthorization.handleResult(result.data)" in main
 assert "result.resultCode" not in main
 assert "Activity.RESULT_OK" not in main
+assert "authorizeGoogleFor" in main
 
 auth = (SRC / "sync/GoogleAuthorizationManager.kt").read_text("utf-8")
 contract = (SRC / "sync/CloudContract.kt").read_text("utf-8")
@@ -41,14 +42,15 @@ assert "CommonStatusCodes.INTERNAL_ERROR" in auth
 assert "AuthorizationRequest.Prompt.SELECT_ACCOUNT" in auth
 assert "GoogleApiAvailability" in auth
 assert "signingCertificateSha1" in auth
-for scope in ["drive.file", "drive.appdata"]:
+for scope in ["drive.file", "drive.appdata", "https://www.googleapis.com/auth/spreadsheets"]:
     assert scope in contract
 assert "drive.metadata.readonly" not in contract
-assert "https://www.googleapis.com/auth/spreadsheets" not in contract
 for action in ["suspend fun save(", "suspend fun load(", "suspend fun sync("]:
     assert action in engine
 for action in ["saveToGoogle", "loadFromGoogle", "linkSpreadsheet"]:
     assert action in settings
+settings_screen = (SRC / "ui/screens/SettingsScreen.kt").read_text("utf-8")
+assert "onFreshGoogleToken" in settings_screen
 assert "justincard-cloud-backup-v125.json" in contract
 assert "appDataFolder" in client
 assert "WindowsCloudCodec.encode" in engine
@@ -59,6 +61,9 @@ assert "Empfänger" in template
 assert "JIC_COLLECTION" not in client
 assert "JIC_DECKS" not in client
 assert "JIC_DEVICES" not in client
+assert "awaitSpreadsheetReady" in client
+assert "TRANSIENT_RETRY_DELAYS_MS" in client
+assert "Google Sheets verweigert den Zugriff" in client
 
 deck_store = (SRC / "data/local/DeckStore.kt").read_text("utf-8")
 upsert = re.search(

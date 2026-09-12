@@ -214,19 +214,24 @@ private fun JustInCardApp(
         // The Activity result code must not be used as an early cancellation gate.
         googleAuthorization.handleResult(result.data)
     }
-    val authorizeGoogle = {
+    val authorizeGoogleFor: ((String) -> Unit) -> Unit = { afterAuthorization ->
         googleAuthorization.authorize(
             launchResolution = googleResolution::launch,
             onSuccess = { token ->
                 googleToken = token
-                if (settingsState.automaticSync && settingsState.spreadsheetId.isNotBlank()) {
-                    settingsViewModel.sync(token)
-                } else {
-                    settingsViewModel.loadSpreadsheets(token)
-                }
+                afterAuthorization(token)
             },
             onError = { message -> scope.launch { snackbar.showSnackbar(message) } },
         )
+    }
+    val authorizeGoogle = {
+        authorizeGoogleFor { token ->
+            if (settingsState.automaticSync && settingsState.spreadsheetId.isNotBlank()) {
+                settingsViewModel.sync(token)
+            } else {
+                settingsViewModel.loadSpreadsheets(token)
+            }
+        }
     }
 
     AdaptiveAppShell(
@@ -267,6 +272,7 @@ private fun JustInCardApp(
                 viewModel = settingsViewModel,
                 googleToken = googleToken,
                 onAuthorizeGoogle = authorizeGoogle,
+                onFreshGoogleToken = authorizeGoogleFor,
                 onExportBackup = { exportBackup.launch("JustInCard_Backup_${todayStamp()}.jicbackup") },
                 onImportBackup = { importBackup.launch(arrayOf("application/zip", "application/octet-stream", "*/*")) },
                 onExportCsv = { exportCsv.launch("JustInCard_Sammlung_${todayStamp()}.csv") },

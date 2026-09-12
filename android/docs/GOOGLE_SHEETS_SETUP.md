@@ -4,10 +4,10 @@ Die Google-Anbindung ist optional. Suche, Sammlung, Livebild, Decks, lokale Back
 
 ## Wichtig zu Status 8 / INTERNAL_ERROR
 
-Die Windows-Anmeldung und die Android-Anmeldung dürfen im selben Google-Cloud-Projekt liegen, verwenden aber unterschiedliche OAuth-Clienttypen.
+Die Windows-Anmeldung und die Android-Anmeldung dürfen im selben Google-Cloud-Projekt liegen, verwenden aber unterschiedliche OAuth-Clienttypen. Das ist eine Vorgabe von Google und keine frei austauschbare App-Einstellung.
 
-- **Windows 1.2.7:** OAuth-Client vom Typ **Desktop-App** und die heruntergeladene `client_secret_....json`.
-- **Android 13.0.4:** OAuth-Client vom Typ **Android**. Hier wird keine Desktop-Client-JSON in die APK eingebaut. Google identifiziert die App über **Paketname + SHA-1 der Signatur**.
+- **Windows 1.2.9:** OAuth-Client vom Typ **Desktop-App** und die heruntergeladene `client_secret_....json`.
+- **Android 13.0.6:** OAuth-Client vom Typ **Android**. Hier wird keine Desktop-Client-JSON in die APK eingebaut. Google identifiziert die App über **Paketname + SHA-1 der Signatur**.
 
 Die bereitgestellte Desktop-JSON ist daher für Windows korrekt, behebt aber eine Android-Autorisierung mit Status 8 nicht.
 
@@ -51,7 +51,7 @@ Die bisherigen gleichnamigen `ANDROID_…`-Secrets bleiben kompatibel. Ohne dies
 
 ## 4. Windows-OAuth im selben Projekt
 
-Für Windows zusätzlich einen OAuth-Client vom Typ **Desktop-App** verwenden. Die heruntergeladene JSON-Datei kann in Windows ausgewählt oder beim Windows-GitHub-Build über `GOOGLE_OAUTH_CLIENT_JSON_B64` eingebettet werden. Diese Datei ist **nicht** der Android-OAuth-Client.
+Für Windows wird weiterhin der fest integrierte OAuth-Client vom Typ **Desktop-App** verwendet. Die JSON-Datei liegt unter `windows/assets/google_oauth_client.json` und wird beim GitHub-Build nur geprüft, nicht mehr durch Secrets ersetzt. Diese Datei ist **nicht** der Android-OAuth-Client.
 
 ## 5. In Android verbinden
 
@@ -64,16 +64,22 @@ Für Windows zusätzlich einen OAuth-Client vom Typ **Desktop-App** verwenden. D
    - **Jetzt synchronisieren**: beide Stände zusammenführen und anschließend lokal sowie in Google speichern.
 5. Unter Windows dieselbe Google-Sheets-URL wählen.
 
-Die sichtbare Tabelle behält die Reiter `Monsterkarten`, `Zauberkarten`, `Fallenkarten` und je einen Reiter pro Deck. Vollständige Felder liegen verlustfrei im privaten Drive-`appDataFolder`-Backup `justincard-cloud-backup-v125.json`. Dieses Format ist identisch zu Windows 1.2.7.
+Die sichtbare Tabelle behält die Reiter `Monsterkarten`, `Zauberkarten`, `Fallenkarten` und je einen Reiter pro Deck. Vollständige Felder liegen verlustfrei im privaten Drive-`appDataFolder`-Backup `justincard-cloud-backup-v125.json`. Dieses Format ist identisch zu Windows 1.2.9.
 
 ## Angeforderte OAuth-Scopes
 
-Android 13.0.4 und Windows 1.2.7 verwenden identisch nur:
+Windows 1.2.9 bleibt unverändert bei:
 
 - `https://www.googleapis.com/auth/drive.file`
 - `https://www.googleapis.com/auth/drive.appdata`
 
-Damit werden keine breiten `drive`- oder `spreadsheets`-Scopes angefordert. Die Sheets API kann für die von dieser App erzeugten/geöffneten Dateien mit `drive.file` verwendet werden.
+Android 13.0.6 fordert zusätzlich an:
+
+- `https://www.googleapis.com/auth/spreadsheets`
+
+Der zusätzliche Android-Scope ist absichtlich eingebaut: Er erlaubt der Sheets API das vollständige Lesen und Bearbeiten einer bereits vorhandenen gemeinsamen Tabelle, während `drive.file` weiterhin nur den dateibezogenen Drive-Zugriff und `drive.appdata` das private Just-InCard-Backup abdecken. Der breite `https://www.googleapis.com/auth/drive`-Scope wird weiterhin nicht verlangt.
+
+**Nach dem Update:** Das Google-Konto in Just InCard einmal erneut verbinden und die neue Tabellen-Berechtigung bestätigen. Falls Google Auth Platform im Testmodus läuft, muss das verwendete Konto weiterhin als Testnutzer eingetragen sein. Unter Google Auth Platform → Datenzugriff sollte der `spreadsheets`-Scope ebenfalls aufgeführt sein.
 
 ## Wenn weiterhin Status 8 erscheint
 
@@ -84,4 +90,4 @@ Damit werden keine breiten `drive`- oder `spreadsheets`-Scopes angefordert. Die 
 5. Falls der OAuth-Zustimmungsbildschirm im Testmodus ist: verwendetes Konto als Testnutzer eintragen.
 6. Google Drive API und Google Sheets API im selben Cloud-Projekt aktivieren.
 
-Android 13.0.4 zeigt bei Status 8/10 Paketname und SHA-1 direkt in der Fehlermeldung an.
+Android 13.0.6 startet die Autorisierung zuerst ohne erzwungenen Account-Picker. Falls Google Play-Dienste trotzdem Status 8 liefern, wird genau einmal mit expliziter Kontoauswahl wiederholt. Bleibt Status 8 bestehen, ist die serverseitige Android-OAuth-Registrierung (Paketname + SHA-1) zu prüfen. Paketname und SHA-1 werden direkt in der Fehlermeldung angezeigt.

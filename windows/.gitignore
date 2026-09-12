@@ -31,5 +31,5 @@ logs/*
 Thumbs.db
 .DS_Store
 
-# Optional local Google OAuth desktop credentials (use GitHub secret for CI)
-assets/google_oauth_client.json
+# The fixed desktop OAuth client is intentionally bundled with this project.
+# Do not ignore assets/google_oauth_client.json; GitHub builds require it.

@@ -59,6 +59,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     googleToken: String,
     onAuthorizeGoogle: () -> Unit,
+    onFreshGoogleToken: ((String) -> Unit) -> Unit,
     onExportBackup: () -> Unit,
     onImportBackup: () -> Unit,
     onExportCsv: () -> Unit,
@@ -167,7 +168,7 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth(),
                     )
                     FilledTonalButton(
-                        onClick = { viewModel.linkSpreadsheet(googleToken, sheetAddress) },
+                        onClick = { onFreshGoogleToken { token -> viewModel.linkSpreadsheet(token, sheetAddress) } },
                         enabled = !state.busy && sheetAddress.isNotBlank(),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
@@ -192,7 +193,7 @@ fun SettingsScreen(
                             sheet = sheet,
                             selected = sheet.id == state.spreadsheetId,
                             enabled = googleToken.isNotBlank() && !state.busy,
-                            onClick = { viewModel.linkSpreadsheet(googleToken, sheet.id) },
+                            onClick = { onFreshGoogleToken { token -> viewModel.linkSpreadsheet(token, sheet.id) } },
                         )
                     }
                 }
@@ -202,7 +203,7 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         OutlinedButton(
-                            onClick = { viewModel.saveToGoogle(googleToken) },
+                            onClick = { onFreshGoogleToken(viewModel::saveToGoogle) },
                             enabled = googleToken.isNotBlank() && !state.busy,
                             modifier = Modifier.weight(1f),
                         ) {
@@ -211,7 +212,7 @@ fun SettingsScreen(
                             Text("Cloud speichern", maxLines = 2)
                         }
                         OutlinedButton(
-                            onClick = { viewModel.loadFromGoogle(googleToken) },
+                            onClick = { onFreshGoogleToken(viewModel::loadFromGoogle) },
                             enabled = googleToken.isNotBlank() && !state.busy,
                             modifier = Modifier.weight(1f),
                         ) {
@@ -221,7 +222,7 @@ fun SettingsScreen(
                         }
                     }
                     Button(
-                        onClick = { viewModel.sync(googleToken) },
+                        onClick = { onFreshGoogleToken { token -> viewModel.sync(token) } },
                         enabled = googleToken.isNotBlank() && !state.busy,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
@@ -231,7 +232,7 @@ fun SettingsScreen(
                     }
                 }
                 Text(
-                    "Speichern überträgt den lokalen Stand, Laden führt den Cloud-Stand lokal zusammen und Synchronisieren gleicht beide Richtungen ab. Windows 1.2.7 und Android verwenden dieselbe Tabelle und dasselbe private Drive-Backup.",
+                    "Speichern überträgt den lokalen Stand, Laden führt den Cloud-Stand lokal zusammen und Synchronisieren gleicht beide Richtungen ab. Windows 1.2.9 und Android verwenden dieselbe Tabelle und dasselbe private Drive-Backup.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -245,7 +246,7 @@ fun SettingsScreen(
                         DeviceRow(
                             device = device,
                             enabled = googleToken.isNotBlank() && !state.busy,
-                            onToggle = { viewModel.setDeviceEnabled(googleToken, device, it) },
+                            onToggle = { enabled -> onFreshGoogleToken { token -> viewModel.setDeviceEnabled(token, device, enabled) } },
                         )
                     }
                 }
@@ -254,7 +255,7 @@ fun SettingsScreen(
 
         item {
             Text(
-                "Just InCard Android 13.0.4 · native Kotlin/Compose-Neuaufbau",
+                "Just InCard Android 13.0.6 · native Kotlin/Compose-Neuaufbau",
                 modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -265,7 +266,7 @@ fun SettingsScreen(
     if (createSheet) {
         CreateSheetDialog(
             onCreate = { name ->
-                viewModel.createSpreadsheet(googleToken, name)
+                onFreshGoogleToken { token -> viewModel.createSpreadsheet(token, name) }
                 createSheet = false
             },
             onDismiss = { createSheet = false },

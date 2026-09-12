@@ -133,6 +133,11 @@ for token in ["Verify bundled Google OAuth client", "assets\\google_oauth_client
 if "GOOGLE_OAUTH_CLIENT_JSON_B64" in workflow:
     raise SystemExit("Build workflow must not override the fixed bundled OAuth client")
 
+gitignore_text = (ROOT / ".gitignore").read_text(encoding="utf-8")
+active_ignores = {line.strip() for line in gitignore_text.splitlines() if line.strip() and not line.lstrip().startswith("#")}
+if "assets/google_oauth_client.json" in active_ignores:
+    raise SystemExit("Fixed Google OAuth client must not be excluded by windows/.gitignore")
+
 build_script = (ROOT / "scripts/build_windows.ps1").read_text(encoding="utf-8")
 for token in [
     "--strict",

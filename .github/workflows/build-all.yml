@@ -12,8 +12,8 @@ permissions:
   contents: write
 
 env:
-  ANDROID_VERSION: "13.0.4"
-  WINDOWS_VERSION: "1.2.8"
+  ANDROID_VERSION: "13.0.6"
+  WINDOWS_VERSION: "1.2.9"
 
 jobs:
   validate:
@@ -30,7 +30,7 @@ jobs:
           python tools/test_android_contract.py
 
   build-android:
-    name: Android 13.0.4 / APK + AAB
+    name: Android 13.0.6 / APK + AAB
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -161,7 +161,7 @@ jobs:
           retention-days: 30
 
   build-windows:
-    name: Windows 1.2.8 / x64
+    name: Windows 1.2.9 / x64
     needs: validate
     runs-on: windows-latest
     timeout-minutes: 70
@@ -184,17 +184,19 @@ jobs:
         shell: pwsh
         run: New-Item -ItemType Directory -Force -Path logs | Out-Null
 
-      - name: Optionalen Google Desktop OAuth Client einbetten
+      - name: Fest integrierten Google Desktop OAuth Client prüfen
         shell: pwsh
-        env:
-          GOOGLE_OAUTH_CLIENT_JSON_B64: ${{ secrets.GOOGLE_OAUTH_CLIENT_JSON_B64 }}
         run: |
-          if (-not [string]::IsNullOrWhiteSpace($env:GOOGLE_OAUTH_CLIENT_JSON_B64)) {
-            [IO.File]::WriteAllBytes((Join-Path $PWD "assets\google_oauth_client.json"), [Convert]::FromBase64String($env:GOOGLE_OAUTH_CLIENT_JSON_B64))
-            "Bundled Google OAuth desktop client: yes" | Set-Content logs\google-oauth-build.txt
-          } else {
-            "Bundled Google OAuth desktop client: no" | Set-Content logs\google-oauth-build.txt
+          $ErrorActionPreference = "Stop"
+          $oauth = Join-Path $PWD "assets\google_oauth_client.json"
+          if (-not (Test-Path $oauth)) {
+            throw "Fixed Google OAuth client is missing: windows/assets/google_oauth_client.json"
           }
+          $json = Get-Content $oauth -Raw | ConvertFrom-Json
+          if ([string]::IsNullOrWhiteSpace($json.installed.client_id)) {
+            throw "Bundled Google OAuth client does not contain installed.client_id"
+          }
+          "Bundled fixed Google OAuth desktop client: yes" | Set-Content logs\google-oauth-build.txt
 
       - name: Python Abhängigkeiten
         shell: pwsh

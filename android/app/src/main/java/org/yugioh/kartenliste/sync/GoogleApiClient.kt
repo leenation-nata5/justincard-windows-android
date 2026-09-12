@@ -69,8 +69,32 @@ class GoogleApiClient(private val accessToken: String) {
             name = response.optString("name", name),
             modifiedTime = response.optString("modifiedTime", ""),
         )
+        // Drive converts the XLSX asynchronously. Wait until the new file is
+        // visible to the Sheets API before the first read/write. On some
+        // accounts this takes a few seconds and otherwise looks like a 403.
+        awaitSpreadsheetReady(sheet.id)
         ensureTemplate(sheet.id)
         return sheet
+    }
+
+
+    private fun awaitSpreadsheetReady(spreadsheetId: String) {
+        var lastError: GoogleSyncException? = null
+        for (attempt in 0..SHEET_READY_RETRY_DELAYS_MS.size) {
+            try {
+                sheetIds(spreadsheetId)
+                return
+            } catch (error: GoogleSyncException) {
+                lastError = error
+                val canRetry = error.statusCode == HttpURLConnection.HTTP_FORBIDDEN ||
+                    error.statusCode == HttpURLConnection.HTTP_NOT_FOUND ||
+                    error.statusCode == HttpURLConnection.HTTP_CONFLICT ||
+                    error.statusCode == 429 || error.statusCode >= 500
+                if (!canRetry || attempt >= SHEET_READY_RETRY_DELAYS_MS.size) throw error
+                Thread.sleep(SHEET_READY_RETRY_DELAYS_MS[attempt])
+            }
+        }
+        throw lastError ?: GoogleSyncException("Die neue Google-Tabelle ist noch nicht bereit.")
     }
 
     fun ensureTemplate(spreadsheetId: String) {
@@ -298,6 +322,26 @@ class GoogleApiClient(private val accessToken: String) {
         body: ByteArray? = null,
         contentType: String? = null,
     ): ByteArray {
+        var lastError: GoogleSyncException? = null
+        for (attempt in 0..TRANSIENT_RETRY_DELAYS_MS.size) {
+            try {
+                return rawRequestOnce(api, method, path, body, contentType)
+            } catch (error: GoogleSyncException) {
+                lastError = error
+                if (!isTransient(error) || attempt >= TRANSIENT_RETRY_DELAYS_MS.size) throw error
+                Thread.sleep(TRANSIENT_RETRY_DELAYS_MS[attempt])
+            }
+        }
+        throw lastError ?: GoogleSyncException("Google API konnte nicht erreicht werden.")
+    }
+
+    private fun rawRequestOnce(
+        api: Api,
+        method: String,
+        path: String,
+        body: ByteArray? = null,
+        contentType: String? = null,
+    ): ByteArray {
         val url = URI.create(api.base + path).toURL()
         val connection = (url.openConnection() as HttpURLConnection).apply {
             requestMethod = if (method == "PATCH") "POST" else method
@@ -318,18 +362,62 @@ class GoogleApiClient(private val accessToken: String) {
             val stream = if (status in 200..299) connection.inputStream else connection.errorStream
             val response = stream?.use { it.readBytes() } ?: byteArrayOf()
             if (status !in 200..299) {
-                val message = runCatching {
-                    JSONObject(String(response, StandardCharsets.UTF_8))
-                        .optJSONObject("error")?.optString("message")
-                }.getOrNull()
+                val responseText = String(response, StandardCharsets.UTF_8)
+                val root = runCatching { JSONObject(responseText) }.getOrNull()
+                val errorObject = root?.optJSONObject("error")
+                val googleMessage = errorObject?.optString("message").orEmpty()
+                val googleStatus = errorObject?.optString("status").orEmpty()
+                val reason = errorObject?.optJSONArray("errors")
+                    ?.optJSONObject(0)?.optString("reason").orEmpty()
                 throw GoogleSyncException(
-                    message?.takeIf(String::isNotBlank) ?: "Google API meldet HTTP $status",
+                    message = friendlyApiError(api, status, googleMessage),
+                    statusCode = status,
+                    apiName = api.displayName,
+                    reason = reason.ifBlank { googleStatus },
                 )
             }
             return response
+        } catch (error: GoogleSyncException) {
+            throw error
+        } catch (error: IOException) {
+            throw GoogleSyncException(
+                "${api.displayName} konnte nicht erreicht werden: ${error.message ?: "Netzwerkfehler"}",
+                error,
+                apiName = api.displayName,
+            )
         } finally {
             connection.disconnect()
         }
+    }
+
+    private fun friendlyApiError(api: Api, status: Int, googleMessage: String): String {
+        val detail = googleMessage.takeIf(String::isNotBlank)?.let { " Google: $it" }.orEmpty()
+        return when {
+            status == HttpURLConnection.HTTP_UNAUTHORIZED ->
+                "Google-Anmeldung ist abgelaufen oder ungültig. Bitte das Google-Konto erneut verbinden.$detail"
+            status == HttpURLConnection.HTTP_FORBIDDEN && api == Api.SHEETS ->
+                "Google Sheets verweigert den Zugriff. Bitte das Google-Konto nach dem Update erneut verbinden, " +
+                    "den Scope 'Google Tabellen ansehen/bearbeiten' freigeben und sicherstellen, dass das Konto " +
+                    "Bearbeitungsrechte für diese Tabelle besitzt.$detail"
+            status == HttpURLConnection.HTTP_FORBIDDEN ->
+                "Google Drive verweigert den Zugriff. Bitte prüfen, ob die Datei mit diesem Konto geöffnet/erstellt " +
+                    "wurde und ob Drive API sowie die angeforderten Berechtigungen aktiv sind.$detail"
+            status == HttpURLConnection.HTTP_NOT_FOUND && api == Api.SHEETS ->
+                "Die Google-Tabelle wurde nicht gefunden oder ist für dieses Konto nicht freigegeben.$detail"
+            status == 429 ->
+                "Google hat vorübergehend zu viele Anfragen erhalten. Die App versucht automatisch erneut.$detail"
+            status >= 500 ->
+                "${api.displayName} ist vorübergehend nicht verfügbar (HTTP $status).$detail"
+            else -> "${api.displayName} meldet HTTP $status.$detail"
+        }
+    }
+
+    private fun isTransient(error: GoogleSyncException): Boolean {
+        if (error.statusCode == 429 || error.statusCode >= 500) return true
+        if (error.statusCode != HttpURLConnection.HTTP_FORBIDDEN) return false
+        val reason = error.reason.lowercase()
+        return reason.contains("ratelimit") || reason.contains("userratelimit") ||
+            reason.contains("backend") || reason.contains("temporar")
     }
 
     private fun List<List<Any?>>.toJsonRows(): JSONArray = JSONArray().apply {
@@ -344,16 +432,24 @@ class GoogleApiClient(private val accessToken: String) {
 
     private data class SheetValues(val range: String, val rows: List<List<Any?>>)
 
-    private enum class Api(val base: String) {
-        DRIVE(BuildConfig.GOOGLE_DRIVE_API_BASE),
-        DRIVE_UPLOAD(BuildConfig.GOOGLE_DRIVE_UPLOAD_BASE),
-        SHEETS(BuildConfig.GOOGLE_SHEETS_API_BASE),
+    private enum class Api(val base: String, val displayName: String) {
+        DRIVE(BuildConfig.GOOGLE_DRIVE_API_BASE, "Google Drive API"),
+        DRIVE_UPLOAD(BuildConfig.GOOGLE_DRIVE_UPLOAD_BASE, "Google Drive Upload"),
+        SHEETS(BuildConfig.GOOGLE_SHEETS_API_BASE, "Google Sheets API"),
     }
 
     private companion object {
         const val GOOGLE_SHEET_MIME = "application/vnd.google-apps.spreadsheet"
         const val XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        val SHEET_READY_RETRY_DELAYS_MS = longArrayOf(300L, 700L, 1_500L, 3_000L, 5_000L)
+        val TRANSIENT_RETRY_DELAYS_MS = longArrayOf(400L, 1_000L, 2_500L)
     }
 }
 
-class GoogleSyncException(message: String, cause: Throwable? = null) : IOException(message, cause)
+class GoogleSyncException(
+    message: String,
+    cause: Throwable? = null,
+    val statusCode: Int = 0,
+    val apiName: String = "",
+    val reason: String = "",
+) : IOException(message, cause)

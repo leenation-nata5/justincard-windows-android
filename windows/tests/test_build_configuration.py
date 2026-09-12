@@ -301,6 +301,8 @@ def test_v128_fixed_google_backup_preview_sort_and_search_contract() -> None:
     v120 = (ROOT / "justincard/v120_features.py").read_text(encoding="utf-8")
     workflow = (ROOT / ".github/workflows/build-windows.yml").read_text(encoding="utf-8")
     assert (ROOT / "assets/google_oauth_client.json").exists()
+    gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+    assert "assets/google_oauth_client.json" not in [line.strip() for line in gitignore.splitlines() if not line.lstrip().startswith("#")]
     assert "Backup erstellen" in feature and "Backup laden" in feature
     assert "CollectionCardPreview" in feature
     assert '("added_at", "Hinzugefügt am")' in v108

@@ -17,23 +17,39 @@ import java.security.MessageDigest
 /**
  * Native Google authorization for Android.
  *
- * Important: Android OAuth is identified by package name + signing-certificate
- * SHA-1. A Desktop OAuth client JSON (the format used by the Windows build) is
- * intentionally not embedded here because Google does not support treating a
- * Desktop client secret as the Android app identity.
+ * Google verifies Android OAuth clients by application package + signing
+ * certificate SHA-1. The Windows Desktop OAuth JSON cannot replace that
+ * server-side Android client registration.
+ *
+ * 13.0.6 deliberately starts with the canonical AuthorizationClient request
+ * without forcing an account prompt. The requested scopes include explicit
+ * Google Sheets read/write access plus per-file Drive and appData access. Some
+ * devices/Play-services versions can return INTERNAL_ERROR while a forced prompt
+ * is used. If the standard request itself returns status 8, one controlled retry
+ * with SELECT_ACCOUNT is made.
  */
 class GoogleAuthorizationManager(private val activity: Activity) {
     private val client = Identity.getAuthorizationClient(activity)
     private var successCallback: ((String) -> Unit)? = null
     private var errorCallback: ((String) -> Unit)? = null
+    private var resolutionLauncher: ((IntentSenderRequest) -> Unit)? = null
+    private var accountPickerRetryUsed = false
+    private var authorizationInProgress = false
 
     fun authorize(
         launchResolution: (IntentSenderRequest) -> Unit,
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit,
     ) {
+        if (authorizationInProgress) {
+            onError("Google-Anmeldung läuft bereits. Bitte kurz warten.")
+            return
+        }
+        authorizationInProgress = true
         successCallback = onSuccess
         errorCallback = onError
+        resolutionLauncher = launchResolution
+        accountPickerRetryUsed = false
 
         val availability = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(activity)
         if (availability != ConnectionResult.SUCCESS) {
@@ -45,30 +61,39 @@ class GoogleAuthorizationManager(private val activity: Activity) {
             return
         }
 
-        val request = AuthorizationRequest.builder()
+        authorizeRequest(forceAccountPicker = false)
+    }
+
+    private fun authorizeRequest(forceAccountPicker: Boolean) {
+        val builder = AuthorizationRequest.builder()
             .setRequestedScopes(CloudContract.SCOPES.map(::Scope))
-            // Always use Google's account picker. This avoids a stale cached
-            // account selection and makes the flow deterministic after updates.
-            .setPrompt(AuthorizationRequest.Prompt.SELECT_ACCOUNT)
-            .build()
+        if (forceAccountPicker) {
+            builder.setPrompt(AuthorizationRequest.Prompt.SELECT_ACCOUNT)
+        }
+        val request = builder.build()
 
         client.authorize(request)
             .addOnSuccessListener { result ->
                 if (result.hasResolution()) {
                     val pending = result.pendingIntent
-                    if (pending == null) {
+                    val launcher = resolutionLauncher
+                    if (pending == null || launcher == null) {
                         completeError("Google-Anmeldung konnte nicht geöffnet werden.")
                     } else {
                         runCatching {
-                            launchResolution(IntentSenderRequest.Builder(pending.intentSender).build())
-                        }.onFailure { completeError(describeError(it)) }
+                            launcher(IntentSenderRequest.Builder(pending.intentSender).build())
+                        }.onFailure { error ->
+                            if (!retryStatus8(error)) completeError(describeError(error))
+                        }
                     }
                 } else {
                     result.accessToken?.takeIf(String::isNotBlank)?.let(::completeSuccess)
                         ?: completeError("Google hat kein Zugriffstoken zurückgegeben.")
                 }
             }
-            .addOnFailureListener { completeError(describeError(it)) }
+            .addOnFailureListener { error ->
+                if (!retryStatus8(error)) completeError(describeError(error))
+            }
     }
 
     fun handleResult(data: Intent?) {
@@ -84,14 +109,27 @@ class GoogleAuthorizationManager(private val activity: Activity) {
             if (token.isNullOrBlank()) completeError("Google hat kein Zugriffstoken zurückgegeben.")
             else completeSuccess(token)
         } catch (error: Throwable) {
-            completeError(describeError(error))
+            if (!retryStatus8(error)) completeError(describeError(error))
         }
+    }
+
+    private fun retryStatus8(error: Throwable): Boolean {
+        val apiError = error as? ApiException ?: return false
+        if (apiError.statusCode != CommonStatusCodes.INTERNAL_ERROR || accountPickerRetryUsed) {
+            return false
+        }
+        accountPickerRetryUsed = true
+        authorizeRequest(forceAccountPicker = true)
+        return true
     }
 
     private fun completeSuccess(token: String) {
         val callback = successCallback
         successCallback = null
         errorCallback = null
+        resolutionLauncher = null
+        accountPickerRetryUsed = false
+        authorizationInProgress = false
         callback?.invoke(token)
     }
 
@@ -99,6 +137,9 @@ class GoogleAuthorizationManager(private val activity: Activity) {
         val callback = errorCallback
         successCallback = null
         errorCallback = null
+        resolutionLauncher = null
+        accountPickerRetryUsed = false
+        authorizationInProgress = false
         callback?.invoke(message)
     }
 
@@ -111,10 +152,9 @@ class GoogleAuthorizationManager(private val activity: Activity) {
             CommonStatusCodes.DEVELOPER_ERROR ->
                 "Google-OAuth ist für diese APK nicht korrekt eingerichtet (Status 10). ${oauthIdentityHint()}"
             CommonStatusCodes.INTERNAL_ERROR ->
-                "Google-Autorisierung ist intern fehlgeschlagen (Status 8). " +
-                    "Dieser Fehler entsteht auf Android typischerweise, wenn die installierte APK in Google Cloud " +
-                    "nicht mit exakt ihrem Paketnamen und ihrer SHA-1-Signatur als OAuth-Client vom Typ Android " +
-                    "registriert ist oder Google Play-Dienste auf dem Gerät fehlerhaft sind. ${oauthIdentityHint()}"
+                "Google-Autorisierung ist auch nach dem automatischen Wiederholungsversuch fehlgeschlagen " +
+                    "(Status 8). Bitte den Android-OAuth-Client in Google Cloud exakt mit dem unten genannten " +
+                    "Paketnamen und SHA-1 registrieren. ${oauthIdentityHint()}"
             CommonStatusCodes.NETWORK_ERROR ->
                 "Google-Autorisierung ist wegen eines Netzwerkfehlers fehlgeschlagen."
             else -> {
@@ -126,8 +166,7 @@ class GoogleAuthorizationManager(private val activity: Activity) {
 
     private fun oauthIdentityHint(): String {
         val sha1 = signingCertificateSha1().ifBlank { "nicht ermittelbar" }
-        return "Android-OAuth-Client benötigt Paket ${activity.packageName} und SHA-1 $sha1. " +
-            "Die Desktop-OAuth-JSON aus Windows ist dafür nicht der richtige Clienttyp."
+        return "Android-OAuth benötigt Paket ${activity.packageName} und SHA-1 $sha1."
     }
 
     @Suppress("DEPRECATION")
