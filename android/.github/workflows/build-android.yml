@@ -1,0 +1,131 @@
+name: Build Just InCard Android
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+env:
+  ANDROID_VERSION: "13.0.9"
+
+jobs:
+  build:
+    name: Android 13.0.9 / APK + AAB
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Android SDK 36
+        uses: android-actions/setup-android@v3
+
+      - name: Android SDK Pakete installieren
+        shell: bash
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+
+      - name: Gradle 9.5.0
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.5.0"
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+
+      - name: Projekt prüfen
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p logs
+          bash scripts/preflight.sh 2>&1 | tee logs/preflight.txt
+
+      - name: Produktionssignierung vorbereiten
+        id: signing
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.JIC_KEYSTORE_BASE64 || secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.JIC_KEYSTORE_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.JIC_KEY_ALIAS || secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.JIC_KEY_PASSWORD || secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          mkdir -p .signing logs
+          if [[ -n "${ANDROID_KEYSTORE_BASE64:-}" && -n "${ANDROID_KEYSTORE_PASSWORD:-}" && -n "${ANDROID_KEY_ALIAS:-}" && -n "${ANDROID_KEY_PASSWORD:-}" ]]; then
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > .signing/release.keystore
+            echo "JIC_KEYSTORE_FILE=$PWD/.signing/release.keystore" >> "$GITHUB_ENV"
+            echo "JIC_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "JIC_KEY_ALIAS=$ANDROID_KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "JIC_KEY_PASSWORD=$ANDROID_KEY_PASSWORD" >> "$GITHUB_ENV"
+            echo "production=true" >> "$GITHUB_OUTPUT"
+            echo "signing=production" > logs/signing.txt
+          else
+            echo "production=false" >> "$GITHUB_OUTPUT"
+            echo "signing=repository-ci-test" > logs/signing.txt
+          fi
+
+      - name: OAuth Signatur-Fingerabdruck protokollieren
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${JIC_KEYSTORE_FILE:-}" ]]; then
+            keytool -list -v -keystore "$JIC_KEYSTORE_FILE" -storepass "$JIC_KEYSTORE_PASSWORD" -alias "$JIC_KEY_ALIAS" | grep -E 'SHA1:|SHA256:' | tee logs/oauth-signing-fingerprint.txt
+          else
+            keytool -list -v -keystore ci/justincard-ci-test.keystore -storepass justincard-ci -alias justincard-ci | grep -E 'SHA1:|SHA256:' | tee logs/oauth-signing-fingerprint.txt
+          fi
+
+      - name: Unit Tests und Lint
+        run: gradle --no-daemon --no-configuration-cache --stacktrace :app:testDebugUnitTest :app:lintDebug 2>&1 | tee logs/tests.txt
+
+      - name: Debug APK bauen
+        run: gradle --no-daemon --no-configuration-cache --stacktrace :app:assembleDebug 2>&1 | tee logs/assemble-debug.txt
+
+      - name: CI Release APK und AAB bauen
+        run: gradle --no-daemon --no-configuration-cache --stacktrace :app:assembleCiRelease :app:bundleCiRelease 2>&1 | tee logs/ci-release-build.txt
+
+      - name: Produktions-Release bauen
+        if: ${{ steps.signing.outputs.production == 'true' }}
+        run: gradle --no-daemon --no-configuration-cache --stacktrace :app:assembleRelease :app:bundleRelease 2>&1 | tee logs/production-release-build.txt
+
+      - name: Artefakte sammeln
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p dist logs
+          find app/build/outputs -type f \( -name '*.apk' -o -name '*.aab' \) -print 2>/dev/null | tee logs/output-files.txt || true
+          if compgen -G 'app/build/outputs/apk/debug/*.apk' >/dev/null; then cp app/build/outputs/apk/debug/*.apk "dist/JustInCard-Android-${ANDROID_VERSION}-debug.apk"; fi
+          if compgen -G 'app/build/outputs/apk/ciRelease/*.apk' >/dev/null; then cp app/build/outputs/apk/ciRelease/*.apk "dist/JustInCard-Android-${ANDROID_VERSION}-ci-release.apk"; fi
+          if compgen -G 'app/build/outputs/bundle/ciRelease/*.aab' >/dev/null; then cp app/build/outputs/bundle/ciRelease/*.aab "dist/JustInCard-Android-${ANDROID_VERSION}-ci-release.aab"; fi
+          if compgen -G 'app/build/outputs/apk/release/*.apk' >/dev/null; then cp app/build/outputs/apk/release/*.apk "dist/JustInCard-Android-${ANDROID_VERSION}-release.apk"; fi
+          if compgen -G 'app/build/outputs/bundle/release/*.aab' >/dev/null; then cp app/build/outputs/bundle/release/*.aab "dist/JustInCard-Android-${ANDROID_VERSION}-release.aab"; fi
+          if compgen -G 'dist/*' >/dev/null; then sha256sum dist/* | tee dist/SHA256SUMS-Android.txt; fi
+
+      - name: Android Builds hochladen
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: JustInCard-Android-${{ env.ANDROID_VERSION }}-${{ github.run_number }}
+          path: dist/**
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+      - name: Android Logs hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: JustInCard-Android-Logs-${{ github.run_number }}
+          path: logs/**
+          if-no-files-found: warn
+          retention-days: 30

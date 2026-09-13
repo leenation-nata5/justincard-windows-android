@@ -2,8 +2,8 @@
 set -euo pipefail
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-repository_root="$(cd "$project_root/.." && pwd)"
-workflow_path="$repository_root/.github/workflows/build-all.yml"
+repository_root="$project_root"
+workflow_path="$project_root/.github/workflows/build-android.yml"
 cd "$project_root"
 
 fail() {
@@ -36,7 +36,7 @@ required=(
 for path in "${required[@]}"; do
   test -f "$path" || fail "Pflichtdatei fehlt: $path"
 done
-test -f "$workflow_path" || fail "Gemeinsamer Android-/Windows-Workflow fehlt: $workflow_path"
+test -f "$workflow_path" || fail "Standalone-Android-Workflow fehlt: $workflow_path"
 
 grep -Fq 'id("com.android.application") version "9.3.2" apply false' build.gradle.kts \
   || fail "Erwartete Android-Gradle-Plugin-Version 9.3.2 fehlt."
@@ -48,10 +48,10 @@ grep -Fq 'minSdk = 24' app/build.gradle.kts \
   || fail "minSdk 24 fehlt. Google Play Services Auth 22.0.0 benoetigt mindestens API 24."
 grep -Fq 'targetSdk = 36' app/build.gradle.kts \
   || fail "targetSdk 36 fehlt."
-grep -Fq 'versionCode = 13008' app/build.gradle.kts \
-  || fail "Android versionCode 13008 fehlt."
-grep -Fq 'versionName = "13.0.8"' app/build.gradle.kts \
-  || fail "Android versionName 13.0.8 fehlt."
+grep -Fq 'versionCode = 13009' app/build.gradle.kts \
+  || fail "Android versionCode 13009 fehlt."
+grep -Fq 'versionName = "13.0.9"' app/build.gradle.kts \
+  || fail "Android versionName 13.0.9 fehlt."
 grep -Fq 'enforcedPlatform("androidx.compose:compose-bom:2026.02.00")' app/build.gradle.kts \
   || fail "Compose BOM 2026.02.00 muss fuer API 36 strikt erzwungen werden."
 grep -Fq 'enforcedPlatform("io.coil-kt.coil3:coil-bom:3.5.0")' app/build.gradle.kts \
@@ -80,13 +80,9 @@ grep -Fq 'applicationIdSuffix = ".ci"' app/build.gradle.kts \
 grep -Fq 'signingConfig = signingConfigs.getByName("ciTest")' app/build.gradle.kts \
   || fail "Der installierbare CI-Release muss mit der stabilen Android-Testsignatur gebaut werden."
 grep -Fq 'gradle-version: "9.5.0"' "$workflow_path" \
-  || fail "Gradle 9.5.0 fehlt im gemeinsamen Workflow."
+  || fail "Gradle 9.5.0 fehlt im Android-Workflow."
 grep -Fq ':app:assembleCiRelease :app:bundleCiRelease' "$workflow_path" \
-  || fail "CI-Release APK/AAB fehlen im gemeinsamen Workflow."
-grep -Fq 'working-directory: android' "$workflow_path" \
-  || fail "Android-Unterprojekt ist im gemeinsamen Workflow nicht konfiguriert."
-grep -Fq 'working-directory: windows' "$workflow_path" \
-  || fail "Windows-Unterprojekt ist im gemeinsamen Workflow nicht konfiguriert."
+  || fail "CI-Release APK/AAB fehlen im Android-Workflow."
 grep -Fq 'android.permission.CAMERA' app/src/main/AndroidManifest.xml \
   || fail "CAMERA-Berechtigung fehlt."
 grep -Fq 'android.permission.INTERNET' app/src/main/AndroidManifest.xml \

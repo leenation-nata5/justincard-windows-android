@@ -1,12 +1,9 @@
 Just InCard – gemeinsames GitHub-Projekt
 
-android/  = Android 13.0.8 (gelieferte Kotlin/Compose-Basis, unverändertes CameraX-/ML-Kit-Livebild, Google-Sync)
-windows/  = Windows-1.3.2-Quellbaum
-shared/   = gemeinsamer Cloud-/Datenvertrag für Windows <-> Android
+android/  = Android 13.0.9
+windows/  = Windows 1.3.4
+shared/   = gemeinsamer Cloud-/Account-Datenvertrag für Windows <-> Android
 tools/    = plattformübergreifende Repository-Prüfungen
 .github/workflows/build-all.yml = paralleler GitHub-Actions-Build für Android + Windows
 
-GitHub erzeugt getrennte Artefakte und Logs für beide Plattformen.
-Die Google-Sheets-Vorlage und der private Cloud-Datenvertrag sind auf beiden Plattformen identisch.
-
-webspace/ = Just InCard Webspace 1.1.0 (PHP/MariaDB Account- und Snapshot-API)
+Der IONOS-Webspace ist absichtlich nicht Teil dieses Projekt-ZIPs und wird separat ausgeliefert.

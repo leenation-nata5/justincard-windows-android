@@ -332,7 +332,7 @@ fun SettingsScreen(
                     }
                 }
                 Text(
-                    "Speichern überträgt den lokalen Stand, Laden führt den Cloud-Stand lokal zusammen und Synchronisieren gleicht beide Richtungen ab. Windows 1.3.2 und Android 13.0.8 verwenden dieselbe Tabelle und dasselbe private Drive-Backup; Sammlung und Decks werden gemeinsam übertragen.",
+                    "Speichern überträgt den lokalen Stand, Laden führt den Cloud-Stand lokal zusammen und Synchronisieren gleicht beide Richtungen ab. Windows 1.3.3 und Android 13.0.9 verwenden dieselbe Tabelle und dasselbe private Drive-Backup; Sammlung und Decks werden gemeinsam übertragen.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -355,7 +355,7 @@ fun SettingsScreen(
 
         item {
             Text(
-                "Just InCard Android 13.0.8 · native Kotlin/Compose-Neuaufbau",
+                "Just InCard Android 13.0.9 · native Kotlin/Compose-Neuaufbau",
                 modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

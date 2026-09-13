@@ -1,1 +1,0 @@
-</main><footer class="site-footer"><div><strong>Just InCard</strong><span>Private Yu‑Gi‑Oh!-Sammlungs- und Deckverwaltung.</span></div><div class="footer-links"><a href="privacy.php">Datenschutz</a><a href="imprint.php">Impressum</a></div></footer><script src="assets/js/app.js"></script></body></html>

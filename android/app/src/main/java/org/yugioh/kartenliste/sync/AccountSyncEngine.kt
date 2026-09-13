@@ -57,6 +57,41 @@ class AccountSyncEngine(
         preferences.accountMode = "local"
     }
 
+    suspend fun loadAfterLogin(): AccountSyncReport = mutex.withLock {
+        withContext(Dispatchers.IO) {
+            val token = preferences.accountToken
+            if (token.isBlank()) throw AccountApiException("Bitte zuerst mit deinem Just-InCard-Konto anmelden.", 401, "unauthorized")
+
+            val remote = api.getSnapshot(token)
+            val remoteCollection = remote.payload.optJSONArray("collection")?.length() ?: 0
+            val remoteDecks = remote.payload.optJSONArray("decks")?.length() ?: 0
+            val hasRemoteData = remoteCollection > 0 || remoteDecks > 0
+
+            if (hasRemoteData) {
+                // First login is a restore operation: never upload an unrelated
+                // local database before the account snapshot has been loaded.
+                applyPayload(remote.payload)
+                saveBase(remote.payload)
+                preferences.accountLastSyncAt = System.currentTimeMillis()
+                return@withContext AccountSyncReport(remote.revision, remoteCollection, remoteDecks)
+            }
+
+            // A genuinely empty new account may be initialized from the current
+            // device so existing local collections are not lost.
+            val local = buildLocalPayload()
+            val localCollection = local.optJSONArray("collection")?.length() ?: 0
+            val localDecks = local.optJSONArray("decks")?.length() ?: 0
+            val revision = if (localCollection > 0 || localDecks > 0) {
+                api.putSnapshot(token, local, remote.revision, preferences.deviceName)
+            } else {
+                remote.revision
+            }
+            saveBase(if (localCollection > 0 || localDecks > 0) local else remote.payload)
+            preferences.accountLastSyncAt = System.currentTimeMillis()
+            AccountSyncReport(revision, localCollection, localDecks)
+        }
+    }
+
     suspend fun sync(): AccountSyncReport = mutex.withLock {
         withContext(Dispatchers.IO) {
             val token = preferences.accountToken

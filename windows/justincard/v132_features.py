@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import time
 from typing import Any
-import webbrowser
 
 from PySide6.QtCore import QThreadPool, QTimer, Qt
 from PySide6.QtWidgets import (
@@ -23,12 +22,12 @@ from PySide6.QtWidgets import (
 
 from justincard.account_sync import (
     AUTO_SYNC_SETTING,
-    DEFAULT_WEBSITE,
     MODE_SETTING,
     TOKEN_SETTING,
     USER_SETTING,
     AccountApiError,
     JustInCardAccountClient,
+    load_windows_account,
     sync_windows_account,
     windows_device_name,
 )
@@ -111,7 +110,7 @@ class _LoginDialog(QDialog):
         root.addWidget(title)
         info = QLabel(
             "Verwende denselben Account wie auf justincard.de. Sammlung und Decks bleiben zusätzlich lokal auf diesem PC "
-            "und werden nach erfolgreicher Anmeldung mit dem IONOS-Konto abgeglichen.",
+            "und werden nach erfolgreicher Anmeldung mit dem IONOS-Konto abgeglichen. Die Anmeldung erfolgt vollständig in der App; es wird kein Browser geöffnet.",
             self,
         )
         info.setWordWrap(True)
@@ -134,16 +133,12 @@ class _LoginDialog(QDialog):
         root.addWidget(self.status)
 
         buttons = QHBoxLayout()
-        register = QPushButton("Konto erstellen", self)
-        register.setProperty("role", "ghost")
-        register.clicked.connect(lambda: webbrowser.open(DEFAULT_WEBSITE + "register.php"))
         cancel = QPushButton("Abbrechen", self)
         cancel.setProperty("role", "ghost")
         cancel.clicked.connect(self.reject)
         self.login = QPushButton("Anmelden", self)
         self.login.setProperty("role", "primary")
         self.login.clicked.connect(self._start_login)
-        buttons.addWidget(register)
         buttons.addStretch(1)
         buttons.addWidget(cancel)
         buttons.addWidget(self.login)
@@ -237,11 +232,66 @@ def _run_account_sync(window: QWidget, database: Any, *, interactive: bool = Tru
     QThreadPool.globalInstance().start(task)
 
 
+def _run_account_restore(window: QWidget, database: Any, *, interactive: bool = True, finished: Any = None) -> None:
+    """Load the account snapshot before the first upload after login."""
+    if getattr(window, "_jic_account_sync_busy", False):
+        if interactive:
+            QMessageBox.information(window, "Just InCard Konto", "Eine Konto-Übertragung läuft bereits.")
+        return
+    token = _account_token(database)
+    if not token:
+        if interactive:
+            QMessageBox.information(window, "Just InCard Konto", "Bitte zuerst mit deinem Just-InCard-Konto anmelden.")
+        return
+    window._jic_account_sync_busy = True
+    task = _CloudTask(lambda: load_windows_account(database, token))
+    window._jic_account_restore_task = task
+
+    def done(result: Any) -> None:
+        window._jic_account_sync_busy = False
+        _refresh_data_pages(window)
+        if callable(finished):
+            try:
+                finished(True, result)
+            except Exception:
+                pass
+        if interactive:
+            result = result if isinstance(result, dict) else {}
+            mode = str(result.get("mode") or "")
+            if mode == "downloaded":
+                lead = "Der vorhandene Konto-Stand wurde vollständig auf diesen PC geladen."
+            elif mode == "seeded":
+                lead = "Das Konto war leer. Der vorhandene lokale Stand wurde als erster Konto-Stand gespeichert."
+            else:
+                lead = "Das Konto ist verbunden. Es waren noch keine Sammlungs- oder Deckdaten gespeichert."
+            QMessageBox.information(
+                window,
+                "Just InCard Konto geladen",
+                f"{lead}\n\nSammlungseinträge: {int(result.get('collection') or 0)}\n"
+                f"Decks: {int(result.get('decks') or 0)}",
+            )
+
+    def failed(message: str) -> None:
+        window._jic_account_sync_busy = False
+        if callable(finished):
+            try:
+                finished(False, message)
+            except Exception:
+                pass
+        if interactive:
+            friendly = message.split(":", 1)[-1].strip() if ":" in message else message
+            QMessageBox.warning(window, "Konto konnte nicht geladen werden", friendly)
+
+    task.signals.done.connect(done)
+    task.signals.failed.connect(failed)
+    QThreadPool.globalInstance().start(task)
+
+
 def _login_and_sync(parent: QWidget, database: Any, *, interactive_sync: bool = True, callback: Any = None) -> bool:
     dialog = _LoginDialog(parent, database)
     if dialog.exec() != QDialog.Accepted:
         return False
-    _run_account_sync(parent.window(), database, interactive=interactive_sync, finished=callback)
+    _run_account_restore(parent.window(), database, interactive=interactive_sync, finished=callback)
     return True
 
 

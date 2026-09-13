@@ -448,12 +448,27 @@ class SearchPage(QWidget):
         self.model.set_cards(cards)
         self.result_label.setText(f"{len(cards):,} Treffer".replace(",", "."))
         if cards:
-            # Always show the first visible search result first. Relying only on
-            # selectionChanged can leave a stale preview when a new model is
-            # installed while the old row index is still selected.
+            # CardTableModel may re-apply the user's previous table sort with a
+            # zero-delay timer after set_cards(). Selecting cards[0] immediately
+            # can therefore show a different card than the row that becomes
+            # visually first. Select *after* that deferred sort and read the
+            # first card back from the model, so list row 1 and preview always
+            # describe the same card.
             self.table.clearSelection()
-            self.table.selectRow(0)
-            self.detail.set_card(cards[0], self.current_set_query)
+
+            def select_visible_first() -> None:
+                if self.model.rowCount() <= 0:
+                    self.detail.set_card(None)
+                    return
+                self.table.selectRow(0)
+                first = self.model.card_at(0)
+                self.detail.set_card(first, self.current_set_query)
+                try:
+                    self.table.scrollToTop()
+                except Exception:
+                    pass
+
+            QTimer.singleShot(0, select_visible_first)
         else:
             self.detail.set_card(None)
         message = f"Suche abgeschlossen: {len(cards)} Treffer"

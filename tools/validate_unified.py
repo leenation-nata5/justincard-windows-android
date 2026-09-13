@@ -47,7 +47,6 @@ required = [
     ".github/workflows/build-all.yml",
     "shared/cloud-contract.md",
     "shared/account-sync-contract.md",
-    "webspace/api/v1/sync.php",
 ]
 for item in required:
     need(item)
@@ -85,8 +84,8 @@ gradle = need("android/app/build.gradle.kts").read_text("utf-8")
 for token in [
     'compileSdk = 36',
     'targetSdk = 36',
-    'versionCode = 13008',
-    'versionName = "13.0.8"',
+    'versionCode = 13009',
+    'versionName = "13.0.9"',
     'play-services-auth:22.0.0',
     'GOOGLE_DRIVE_API_BASE',
     'GOOGLE_DRIVE_UPLOAD_BASE',
@@ -102,7 +101,7 @@ for token in [
     "build-windows:",
     "windows-latest",
     "ubuntu-latest",
-    'ANDROID_VERSION: "13.0.8"',
+    'ANDROID_VERSION: "13.0.9"',
     'sdkmanager "platforms;android-36"',
     'gradle-version: "9.5.0"',
     ":app:testDebugUnitTest :app:lintDebug",
@@ -240,10 +239,10 @@ for token in ["Monster", "Zauber", "Fallen", "Extra Deck", "Side Deck"]:
     if token not in windows_sheet:
         errors.append(f"Android deck sheet ordering missing {token}")
 
-# Windows 1.3.2 adds the IONOS account path while preserving local/Google operation.
+# Windows 1.3.4 keeps the IONOS account path and performs account login fully in-app.
 windows_version = need("windows/justincard/version.py").read_text("utf-8")
-if 'APP_VERSION = "1.3.2"' not in windows_version:
-    errors.append("Windows version is not 1.3.2")
+if 'APP_VERSION = "1.3.4"' not in windows_version:
+    errors.append("Windows version is not 1.3.4")
 windows_v128 = need("windows/justincard/v128_features.py").read_text("utf-8")
 for token in [
     "Backup erstellen",
@@ -252,7 +251,7 @@ for token in [
     "install_v128_patches",
 ]:
     if token not in windows_v128:
-        errors.append(f"Windows 1.3.2 feature missing {token}")
+        errors.append(f"Windows 1.3.4 feature missing {token}")
 for token in [
     "SearchAddActionRow",
     "_AdaptiveCollectionPreview",
@@ -260,7 +259,7 @@ for token in [
     "move_quantity_to_add_button",
 ]:
     if token not in windows_v128:
-        errors.append(f"Windows 1.3.2 UI hotfix missing {token}")
+        errors.append(f"Windows 1.3.4 UI hotfix missing {token}")
 windows_v130 = need("windows/justincard/v130_features.py").read_text("utf-8")
 for token in [
     "GLOBAL_LANGUAGE_SETTING",
@@ -270,7 +269,7 @@ for token in [
     "install_v130_patches",
 ]:
     if token not in windows_v130:
-        errors.append(f"Windows 1.3.2 feature missing {token}")
+        errors.append(f"Windows 1.3.4 feature missing {token}")
 for token in ["Monster", "Zauber", "Fallen", "Extra Deck", "Side Deck"]:
     if token not in windows_cloud:
         errors.append(f"Windows deck sheet ordering missing {token}")
@@ -301,15 +300,19 @@ for token in ["justincard-account-sync-v1", "sync_windows_account", "merge_paylo
 windows_v132 = need("windows/justincard/v132_features.py").read_text("utf-8")
 for token in ["Just InCard Konto (IONOS)", "Nur lokal verwenden", "Mit Just InCard Konto anmelden", "install_v132_patches"]:
     if token not in windows_v132:
-        errors.append(f"Windows 1.3.2 account UI missing {token}")
-web_sync = need("webspace/api/v1/sync.php").read_text("utf-8")
-for token in ["account_sync_payloads", "if_revision", "revision_conflict", "justincard-account-sync-v1"]:
-    if token not in web_sync:
-        errors.append(f"Webspace account sync endpoint missing {token}")
-
+        errors.append(f"Windows 1.3.4 account UI missing {token}")
 windows_search = need("windows/justincard/ui/search_page.py").read_text("utf-8")
-if "self.detail.set_card(cards[0], self.current_set_query)" not in windows_search:
-    errors.append("Windows first-result preview fix missing")
+for token in ["select_visible_first", "self.table.selectRow(0)", "self.model.card_at(0)", "QTimer.singleShot(0, select_visible_first)"]:
+    if token not in windows_search:
+        errors.append(f"Windows visible-first-result preview fix missing {token}")
+
+# Windows account login must never launch a browser. Account creation remains on the webspace,
+# but signing in is performed only through the HTTPS API from the in-app credential dialog.
+if "webbrowser" in windows_v132 or "DEFAULT_WEBSITE" in windows_v132 or 'QPushButton("Konto erstellen"' in windows_v132:
+    errors.append("Windows account login still contains external-browser integration")
+for token in ["JustInCardAccountClient().login", "es wird kein Browser geöffnet"]:
+    if token not in windows_v132:
+        errors.append(f"Windows in-app account login missing {token}")
 
 if errors:
     print("\n".join(f"ERROR {error}" for error in errors))

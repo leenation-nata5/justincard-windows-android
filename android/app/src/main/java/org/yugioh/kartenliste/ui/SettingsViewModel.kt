@@ -120,10 +120,10 @@ class SettingsViewModel(
         viewModelScope.launch {
             runCatching {
                 accountSync.login(identity, password)
-                accountSync.sync()
+                accountSync.loadAfterLogin()
             }.onSuccess { report ->
                 _state.value = snapshot().copy(
-                    message = "Konto verbunden. ${report.collectionCount} Sammlungseinträge und ${report.deckCount} Decks wurden synchronisiert.",
+                    message = "Konto verbunden. ${report.collectionCount} Sammlungseinträge und ${report.deckCount} Decks wurden geladen.",
                 )
             }.onFailure { error ->
                 preferences.accountMode = previousMode

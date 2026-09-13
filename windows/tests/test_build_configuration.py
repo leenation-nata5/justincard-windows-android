@@ -305,7 +305,18 @@ def test_v128_fixed_google_backup_preview_sort_and_search_contract() -> None:
     assert "Backup erstellen" in feature and "Backup laden" in feature
     assert "CollectionCardPreview" in feature
     assert '("added_at", "Hinzugefügt am")' in v108
-    assert "self.detail.set_card(cards[0], self.current_set_query)" in search
+    assert "first = self.model.card_at(0)" in search
+    assert "self.detail.set_card(first, self.current_set_query)" in search
     assert "application-bundled OAuth desktop" in v120
     assert "Prepare optional Google OAuth client" not in workflow
     assert "Verify bundled Google OAuth client" in workflow
+
+
+def test_ionos_account_login_stays_inside_windows_app() -> None:
+    text = (ROOT / "justincard/v132_features.py").read_text(encoding="utf-8")
+    assert "class _LoginDialog(QDialog)" in text
+    assert "JustInCardAccountClient().login" in text
+    assert "webbrowser" not in text
+    assert "DEFAULT_WEBSITE" not in text
+    assert 'QPushButton("Konto erstellen"' not in text
+    assert "es wird kein Browser geöffnet" in text
