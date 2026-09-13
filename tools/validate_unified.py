@@ -22,6 +22,7 @@ required = [
     "android/app/src/main/assets/google_sheets_template.xlsx",
     "android/app/src/main/java/org/yugioh/kartenliste/MainActivity.kt",
     "android/app/src/main/java/org/yugioh/kartenliste/data/local/DeckStore.kt",
+    "android/app/src/main/java/org/yugioh/kartenliste/data/model/CardLanguages.kt",
     "android/app/src/main/java/org/yugioh/kartenliste/scanner/LiveCardAnalyzer.kt",
     "android/app/src/main/java/org/yugioh/kartenliste/sync/CloudContract.kt",
     "android/app/src/main/java/org/yugioh/kartenliste/sync/GoogleAuthorizationManager.kt",
@@ -31,10 +32,13 @@ required = [
     "android/app/src/main/java/org/yugioh/kartenliste/sync/WindowsSheetTemplate.kt",
     "android/app/src/main/java/org/yugioh/kartenliste/ui/screens/SettingsScreen.kt",
     "android/app/src/main/java/org/yugioh/kartenliste/ui/screens/SearchScreen.kt",
+    "android/app/src/main/java/org/yugioh/kartenliste/ui/screens/CollectionScreen.kt",
+    "android/app/src/main/java/org/yugioh/kartenliste/ui/screens/DeckScreen.kt",
     "android/ci/justincard-ci-test.keystore",
     "windows/justincard/cloud_sync.py",
     "windows/justincard/version.py",
     "windows/justincard/v128_features.py",
+    "windows/justincard/v130_features.py",
     "windows/assets/google_oauth_client.json",
     ".github/workflows/build-all.yml",
     "shared/cloud-contract.md",
@@ -75,8 +79,8 @@ gradle = need("android/app/build.gradle.kts").read_text("utf-8")
 for token in [
     'compileSdk = 36',
     'targetSdk = 36',
-    'versionCode = 13006',
-    'versionName = "13.0.6"',
+    'versionCode = 13007',
+    'versionName = "13.0.7"',
     'play-services-auth:22.0.0',
     'GOOGLE_DRIVE_API_BASE',
     'GOOGLE_DRIVE_UPLOAD_BASE',
@@ -92,7 +96,7 @@ for token in [
     "build-windows:",
     "windows-latest",
     "ubuntu-latest",
-    'ANDROID_VERSION: "13.0.6"',
+    'ANDROID_VERSION: "13.0.7"',
     'sdkmanager "platforms;android-36"',
     'gradle-version: "9.5.0"',
     ":app:testDebugUnitTest :app:lintDebug",
@@ -147,7 +151,7 @@ for token in [
     "Google Sheets verweigert den Zugriff",
 ]:
     if token not in google_api:
-        errors.append(f"Android 13.0.6 Google retry/permission fix missing {token}")
+        errors.append(f"Android 13.0.7 Google retry/permission fix missing {token}")
 
 google_auth = need(
     "android/app/src/main/java/org/yugioh/kartenliste/sync/GoogleAuthorizationManager.kt"
@@ -203,10 +207,37 @@ for token in [
     if token not in settings:
         errors.append(f"Google synchronization UI missing {token}")
 
-# Windows 1.2.9 intentionally extends the previously supplied 1.2.7 tree.
+
+card_languages = need(
+    "android/app/src/main/java/org/yugioh/kartenliste/data/model/CardLanguages.kt"
+).read_text("utf-8")
+for token in ["Deutsch", "Englisch", "Japanisch", "Koreanisch", "remoteCatalogLanguages"]:
+    if token not in card_languages:
+        errors.append(f"Android global card-language model missing {token}")
+
+collection_screen = need(
+    "android/app/src/main/java/org/yugioh/kartenliste/ui/screens/CollectionScreen.kt"
+).read_text("utf-8")
+deck_screen = need(
+    "android/app/src/main/java/org/yugioh/kartenliste/ui/screens/DeckScreen.kt"
+).read_text("utf-8")
+for token in ["Sortierung", "Aufsteigend", "Absteigend"]:
+    if token not in collection_screen:
+        errors.append(f"Android collection sorting UI missing {token}")
+for token in ["CardThumbnail", "Hinzufügen", "Sortierung", "Aufsteigend", "Absteigend"]:
+    if token not in deck_screen:
+        errors.append(f"Android deck preview/sorting UI missing {token}")
+windows_sheet = need(
+    "android/app/src/main/java/org/yugioh/kartenliste/sync/WindowsSheetTemplate.kt"
+).read_text("utf-8")
+for token in ["Monster", "Zauber", "Fallen", "Extra Deck", "Side Deck"]:
+    if token not in windows_sheet:
+        errors.append(f"Android deck sheet ordering missing {token}")
+
+# Windows 1.3.1 extends the prior Windows tree with cross-platform deck/language improvements.
 windows_version = need("windows/justincard/version.py").read_text("utf-8")
-if 'APP_VERSION = "1.2.9"' not in windows_version:
-    errors.append("Windows version is not 1.2.9")
+if 'APP_VERSION = "1.3.1"' not in windows_version:
+    errors.append("Windows version is not 1.3.1")
 windows_v128 = need("windows/justincard/v128_features.py").read_text("utf-8")
 for token in [
     "Backup erstellen",
@@ -215,7 +246,29 @@ for token in [
     "install_v128_patches",
 ]:
     if token not in windows_v128:
-        errors.append(f"Windows 1.2.9 feature missing {token}")
+        errors.append(f"Windows 1.3.1 feature missing {token}")
+for token in [
+    "SearchAddActionRow",
+    "_AdaptiveCollectionPreview",
+    "Qt.KeepAspectRatio",
+    "move_quantity_to_add_button",
+]:
+    if token not in windows_v128:
+        errors.append(f"Windows 1.3.1 UI hotfix missing {token}")
+windows_v130 = need("windows/justincard/v130_features.py").read_text("utf-8")
+for token in [
+    "GLOBAL_LANGUAGE_SETTING",
+    "SYNC_INTERVAL_MS",
+    "Sammlung + Decks hochladen",
+    "Dauerhaft automatisch synchronisieren",
+    "install_v130_patches",
+]:
+    if token not in windows_v130:
+        errors.append(f"Windows 1.3.1 feature missing {token}")
+for token in ["Monster", "Zauber", "Fallen", "Extra Deck", "Side Deck"]:
+    if token not in windows_cloud:
+        errors.append(f"Windows deck sheet ordering missing {token}")
+
 windows_search = need("windows/justincard/ui/search_page.py").read_text("utf-8")
 if "self.detail.set_card(cards[0], self.current_set_query)" not in windows_search:
     errors.append("Windows first-result preview fix missing")

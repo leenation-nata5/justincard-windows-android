@@ -446,13 +446,36 @@ def deck_template_row(item: dict[str, Any]) -> list[Any]:
 def deck_sheet_rows(
     deck: dict[str, Any], sort_field: str = "name", sort_direction: str = "asc"
 ) -> list[list[Any]]:
-    """Deck rows preserve the exact program order and use template columns only."""
+    """Write deck tabs in the cross-platform order requested by the UI.
+
+    Main-deck cards are split into Monster -> Spell -> Trap.  Extra Deck and
+    Side Deck follow afterwards.  The selected Google-Sheets sort is applied
+    inside each block without ever moving a card into another deck zone.
+    """
     normalized = serialize_deck(deck)
     items = [dict(item) for item in normalized["cards"]]
-    sections: list[tuple[str, list[dict[str, Any]]]] = []
-    for zone, label in (("main", "Main Deck"), ("extra", "Extra Deck"), ("side", "Side Deck")):
-        section = [item for item in items if str(item.get("zone") or "main").casefold() == zone]
-        sections.append((label, section))
+
+    def zone(item: dict[str, Any]) -> str:
+        return str(item.get("zone") or item.get("section") or "main").strip().casefold()
+
+    def family(item: dict[str, Any]) -> str:
+        return template_family(_card_from_record(_deck_card_record(item)))
+
+    def sorted_section(values: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        return sorted(
+            values,
+            key=lambda item: record_sort_value(_deck_card_record(item), sort_field),
+            reverse=str(sort_direction).lower() == "desc",
+        )
+
+    main = [item for item in items if zone(item) in {"main", "main deck", "main_deck"}]
+    sections: list[tuple[str, list[dict[str, Any]]]] = [
+        ("Monster", sorted_section([item for item in main if family(item) == MONSTER_SHEET])),
+        ("Zauber", sorted_section([item for item in main if family(item) == SPELL_SHEET])),
+        ("Fallen", sorted_section([item for item in main if family(item) == TRAP_SHEET])),
+        ("Extra Deck", sorted_section([item for item in items if zone(item) in {"extra", "extra deck", "extra_deck"}])),
+        ("Side Deck", sorted_section([item for item in items if zone(item) in {"side", "side deck", "side_deck"}])),
+    ]
 
     rows: list[list[Any]] = [list(MONSTER_HEADERS)]
     first = True
@@ -461,7 +484,6 @@ def deck_sheet_rows(
             continue
         if not first:
             rows.append(["", "", "", "", "", ""])
-        # Section label uses only an existing template cell; no extra columns.
         rows.append(["", label, "", "", "", ""])
         for item in section:
             count = max(1, _safe_int(item.get("quantity"), 1))

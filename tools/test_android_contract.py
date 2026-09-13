@@ -65,6 +65,22 @@ assert "awaitSpreadsheetReady" in client
 assert "TRANSIENT_RETRY_DELAYS_MS" in client
 assert "Google Sheets verweigert den Zugriff" in client
 
+
+card_languages = (SRC / "data/model/CardLanguages.kt").read_text("utf-8")
+for token in ["Deutsch", "Englisch", "Japanisch", "Koreanisch", "remoteCatalogLanguages"]:
+    assert token in card_languages
+
+collection_screen = (SRC / "ui/screens/CollectionScreen.kt").read_text("utf-8")
+deck_screen = (SRC / "ui/screens/DeckScreen.kt").read_text("utf-8")
+settings_screen = (SRC / "ui/screens/SettingsScreen.kt").read_text("utf-8")
+assert "Kartentext-Sprache (appweit)" in settings_screen
+for token in ["Sortierung", "Aufsteigend", "Absteigend"]:
+    assert token in collection_screen
+for token in ["CardThumbnail", "Hinzufügen", "Deck sortieren", "Aufsteigend", "Absteigend"]:
+    assert token in deck_screen
+for label in ["Monster", "Zauber", "Fallen", "Extra Deck", "Side Deck"]:
+    assert label in template
+
 deck_store = (SRC / "data/local/DeckStore.kt").read_text("utf-8")
 upsert = re.search(
     r"private fun upsertDeck\(.*?(?=\n    private fun)",

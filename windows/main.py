@@ -42,6 +42,7 @@ SELF_TEST_MODULES = (
     "justincard.v123_core",
     "justincard.v123_features",
     "justincard.v128_features",
+    "justincard.v130_features",
 )
 
 
@@ -122,9 +123,11 @@ def run_self_test() -> int:
         )
         from justincard.v108_features import install_v108_patches
         from justincard.v128_features import install_v128_patches
+        from justincard.v130_features import install_v130_patches
 
         install_v108_patches()
         install_v128_patches()
+        install_v130_patches()
 
         field_names = {field.name for field in fields(SearchFilters)}
         required = {"language", "set_query", "sort_by", "limit", "quick_text", "passcode"}
@@ -318,9 +321,11 @@ def run_ui_self_test() -> int:
         from justincard.ui.scanner_page import ScannerPage
         from justincard.v108_features import install_v108_patches
         from justincard.v128_features import install_v128_patches
+        from justincard.v130_features import install_v130_patches
 
         install_v108_patches()
         install_v128_patches()
+        install_v130_patches()
         app = QApplication.instance()
         if app is None:
             app = QApplication(["JustInCard", APP_UI_SELF_TEST_FLAG])
@@ -437,12 +442,14 @@ def _run_gui() -> int:
     from justincard.ui.main_window import MainWindow
     from justincard.v108_features import install_v108_patches
     from justincard.v128_features import install_v128_patches
+    from justincard.v130_features import install_v130_patches
     from justincard.version import APP_NAME, APP_VERSION
 
     # Install schema/UI compatibility overlays before CardDatabase and MainWindow
     # are instantiated.  The legacy 1.0.3 modules remain untouched on disk.
     install_v108_patches()
     install_v128_patches()
+    install_v130_patches()
 
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)

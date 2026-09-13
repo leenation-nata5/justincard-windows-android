@@ -1,11 +1,19 @@
 package org.yugioh.kartenliste.data.local
 
 import android.content.Context
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import org.yugioh.kartenliste.data.model.CardLanguages
 import org.yugioh.kartenliste.data.model.SyncProfile
 import java.util.UUID
 
 class AppPreferences(context: Context) {
     private val preferences = context.getSharedPreferences("justincard_preferences_v13", Context.MODE_PRIVATE)
+    private val _cardTextLanguage = MutableStateFlow(
+        CardLanguages.normalize(preferences.getString(KEY_CARD_TEXT_LANGUAGE, "de")),
+    )
+    val cardTextLanguageFlow: StateFlow<String> = _cardTextLanguage.asStateFlow()
 
     val deviceId: String
         get() = preferences.getString(KEY_DEVICE_ID, null) ?: UUID.randomUUID().toString().also {
@@ -23,6 +31,15 @@ class AppPreferences(context: Context) {
     var reducedMotion: Boolean
         get() = preferences.getBoolean(KEY_REDUCED_MOTION, false)
         set(value) { preferences.edit().putBoolean(KEY_REDUCED_MOTION, value).apply() }
+
+
+    var cardTextLanguage: String
+        get() = CardLanguages.normalize(preferences.getString(KEY_CARD_TEXT_LANGUAGE, "de"))
+        set(value) {
+            val normalized = CardLanguages.normalize(value)
+            preferences.edit().putString(KEY_CARD_TEXT_LANGUAGE, normalized).apply()
+            _cardTextLanguage.value = normalized
+        }
 
     var spreadsheetId: String
         get() = preferences.getString(KEY_SHEET_ID, "") ?: ""
@@ -58,6 +75,7 @@ class AppPreferences(context: Context) {
         private const val KEY_DEVICE_NAME = "device_name"
         private const val KEY_THEME = "theme"
         private const val KEY_REDUCED_MOTION = "reduced_motion"
+        private const val KEY_CARD_TEXT_LANGUAGE = "card_text_language"
         private const val KEY_SHEET_ID = "spreadsheet_id"
         private const val KEY_SHEET_NAME = "spreadsheet_name"
         private const val KEY_AUTO_SYNC = "automatic_sync"

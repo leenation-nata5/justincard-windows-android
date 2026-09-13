@@ -21,7 +21,7 @@ import java.security.MessageDigest
  * certificate SHA-1. The Windows Desktop OAuth JSON cannot replace that
  * server-side Android client registration.
  *
- * 13.0.6 deliberately starts with the canonical AuthorizationClient request
+ * 13.0.7 deliberately starts with the canonical AuthorizationClient request
  * without forcing an account prompt. The requested scopes include explicit
  * Google Sheets read/write access plus per-file Drive and appData access. Some
  * devices/Play-services versions can return INTERNAL_ERROR while a forced prompt

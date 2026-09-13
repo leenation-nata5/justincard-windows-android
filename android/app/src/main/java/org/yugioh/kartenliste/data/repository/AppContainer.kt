@@ -16,7 +16,7 @@ class AppContainer(context: Context) {
     private val collectionStore = CollectionStore(database)
     private val deckStore = DeckStore(database, collectionStore)
     val deviceStore = DeviceStore(database)
-    val cards = CardRepository(database, YgoProDeckClient())
+    val cards = CardRepository(database, YgoProDeckClient(), preferences)
     val collection = CollectionRepository(collectionStore, preferences)
     val decks = DeckRepository(deckStore, preferences)
     val backups = BackupManager(context.contentResolver)

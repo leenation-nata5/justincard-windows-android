@@ -427,7 +427,7 @@ def _add_google_cloud_settings(page: Any) -> None:
             status.setText(message)
 
     def cloud(interactive: bool = False) -> GoogleSheetsCloud:
-        # v1.2.9: Windows always uses the application-bundled OAuth desktop
+        # v1.3.0: Windows always uses the application-bundled OAuth desktop
         # client. The user cannot replace it from the UI or via a persisted
         # path setting. This keeps sign-in identical on every installation.
         from justincard.paths import resource_path
@@ -465,8 +465,9 @@ def _add_google_cloud_settings(page: Any) -> None:
         dialog.setMinimumWidth(520)
         layout = QVBoxLayout(dialog)
         intro = QLabel(
-            "Wählen Sie vor dem Export, wie die drei Vorlagen-Reiter in Google Sheets sortiert werden. "
-            "Deck-Reiter behalten unabhängig davon exakt die Reihenfolge aus dem Deckbuilder."
+            "Wählen Sie vor dem Export, wie die Vorlagen-Reiter in Google Sheets sortiert werden. "
+            "Deck-Reiter werden fest in Monster, Zauber, Fallen, Extra Deck und Side Deck gegliedert; "
+            "die gewählte Sortierung gilt innerhalb dieser Bereiche."
         )
         intro.setWordWrap(True)
         intro.setObjectName("Muted")

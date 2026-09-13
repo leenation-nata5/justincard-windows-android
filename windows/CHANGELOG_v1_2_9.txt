@@ -1,6 +1,0 @@
-Just InCard Windows Desktop 1.2.9
-
-- GitHub-Buildfehler durch ignorierte assets/google_oauth_client.json behoben.
-- Fest eingebettete OAuth-Datei wird im Repository mitgeführt und vor dem Build validiert.
-- GitHub-Secrets können die feste OAuth-Datei nicht mehr überschreiben.
-- Funktionen aus 1.2.8 bleiben unverändert erhalten.

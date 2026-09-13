@@ -62,6 +62,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
 import org.yugioh.kartenliste.data.model.Card
+import org.yugioh.kartenliste.data.model.CardLanguages
 import org.yugioh.kartenliste.data.model.CardPrint
 import org.yugioh.kartenliste.data.model.SearchFilters
 import org.yugioh.kartenliste.data.model.SearchSort
@@ -355,7 +356,11 @@ private fun FilterSheet(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text("Kombinierbare Filter", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            ChoiceField("Sprache", filters.language, languageChoices, { onChange(filters.copy(language = it)) })
+            Text(
+                "Kartentext-Sprache: ${CardLanguages.label(filters.language)} · appweit in Einstellungen",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             ChoiceField("Sortierung", filters.sort.name, SearchSort.entries.map { it.name to it.label }, {
                 onChange(filters.copy(sort = SearchSort.valueOf(it)))
             })
@@ -537,12 +542,3 @@ private fun CardDetailSheet(
         }
     }
 }
-
-private val languageChoices = listOf(
-    "all" to "Alle Sprachen",
-    "de" to "Deutsch",
-    "en" to "Englisch",
-    "fr" to "Französisch",
-    "it" to "Italienisch",
-    "pt" to "Portugiesisch",
-)

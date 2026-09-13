@@ -1,6 +1,16 @@
-# Just InCard – Windows Desktop 1.2.9
+# Just InCard – Windows Desktop 1.3.1
 
-## Google-Sheets-Vorlage (neu in 1.2.9)
+## Windows 1.3.1 – neue Bedien- und Cloud-Funktionen
+
+- Suchdetail: Die Mengenwahl sitzt jetzt direkt vor „Zur Sammlung hinzufügen“ in derselben Zeile und nicht mehr am unteren Rand der Detailansicht.
+- Sammlungsvorschau: Das Kartenbild wird dynamisch an den tatsächlich verfügbaren Bereich angepasst und immer vollständig mit beibehaltenem Seitenverhältnis dargestellt.
+- Deckbau mit Kartenbild-/Detailvorschau vor dem Hinzufügen.
+- Appweite Kartentext-Sprache in den Einstellungen; Suche, Vorschauen, Sammlung und Deckbau verwenden dieselbe Auswahl.
+- Sortierwechsel in Sammlung und Deckbau halten Auswahl und Vorschau synchron.
+- Manueller Google-Upload und „Jetzt synchronisieren“ sind wieder sichtbar.
+- Optionaler Dauerabgleich beim Start und anschließend alle fünf Minuten.
+
+## Google-Sheets-Vorlage
 
 Für die browserlesbare Google-Sheets-Datei wird **ausschließlich** die vom Nutzer bereitgestellte Datei `Yugioh Excel Beispiel(1).xlsx` verwendet. Die Originaldatei liegt unverändert unter `assets/google_sheets_template.xlsx` und wird bei der ersten Cloud-Erstellung direkt nach Google Sheets konvertiert.
 
@@ -16,7 +26,7 @@ Tuner/Empfänger sind **kein eigener Reiter** mehr. Sie stehen im Reiter **Monst
 
 Vor jedem manuellen **Hochladen** und **Synchronisieren** erscheint weiterhin eine Sortierauswahl. Sortiert werden kann nach Name, Kartentyp, Passcode, Set-Code, Typ, Element, Kategorie oder Sterne, jeweils auf- oder absteigend. Der Passcode darf als Sortierkriterium verwendet werden, wird aber nicht als Spalte exportiert, weil er nicht Bestandteil der Vorlage ist.
 
-Jedes gespeicherte Deck behält einen eigenen Reiter mit dem **Decknamen**. Der Reiter verwendet ausschließlich die sechs Spalten der Monsterkarten-Vorlage. Main Deck, Extra Deck und Side Deck werden über Abschnittszeilen getrennt; die Kartenreihenfolge innerhalb der Bereiche entspricht der Reihenfolge der App. Mengen werden auch dort durch wiederholte Kartenzeilen dargestellt.
+Jedes gespeicherte Deck behält einen eigenen Reiter mit dem **Decknamen**. Der Reiter verwendet ausschließlich die sechs Spalten der Monsterkarten-Vorlage. Die Abschnitte stehen immer in der Reihenfolge **Monster → Zauber → Fallen → Extra Deck → Side Deck**. Die gewählte Google-Sortierung wirkt innerhalb des jeweiligen Abschnitts. Mengen werden auch dort durch wiederholte Kartenzeilen dargestellt.
 
 ### Verlustfreie Cloud-Sicherung trotz schlanker Vorlage
 
@@ -31,7 +41,7 @@ Für die Veröffentlichung gibt es zwei sinnvolle Google-Konfigurationen:
 - **Internal**: nur Benutzer derselben Google-Workspace-/Cloud-Identity-Organisation können die App autorisieren. Das eignet sich, wenn alle Benutzer zu deinem Unternehmen gehören.
 - **External**: Benutzer mit normalen Google-Konten können die App autorisieren. Im Status **Testing** müssen sie als Testnutzer eingetragen werden; für eine breitere Verteilung sollte die App auf **In production** gestellt werden.
 
-Seit 1.2.9 fordert Just InCard nur noch `drive.file` und `drive.appdata` an. Der frühere breite `spreadsheets`-Scope wird nicht mehr benötigt. Nach dem Update ist deshalb einmaliges erneutes Google-Anmelden erforderlich.
+Seit 1.3.0 fordert Just InCard nur noch `drive.file` und `drive.appdata` an. Der frühere breite `spreadsheets`-Scope wird nicht mehr benötigt. Nach dem Update ist deshalb einmaliges erneutes Google-Anmelden erforderlich.
 
 ### Einmalige Google-Cloud-Einrichtung
 
@@ -40,7 +50,7 @@ Seit 1.2.9 fordert Just InCard nur noch `drive.file` und `drive.appdata` an. Der
 3. Unter Google Auth Platform die gewünschte Zielgruppe **Internal** oder **External** festlegen.
 4. Der mitgelieferte OAuth-Client vom Typ **Desktop-App** liegt fest unter `assets/google_oauth_client.json` und wird beim Build unverändert eingebettet.
 5. **Mit Google anmelden** anklicken.
-6. **Sammlung aus Google laden** findet die zugehörige Just-InCard-Tabelle automatisch oder legt sie beim ersten Einsatz an.
+6. **Sammlung + Decks aus Google laden**, **Sammlung + Decks hochladen** oder **Jetzt synchronisieren** verwenden dieselbe Just-InCard-Tabelle. Optional kann der Dauerabgleich aktiviert werden.
 
 Die OAuth-Datei kann in der Windows-Oberfläche nicht ausgetauscht werden. Der GitHub-Workflow prüft lediglich, dass die fest eingebundene Datei vorhanden ist.
 
@@ -75,7 +85,7 @@ Der Workflow läuft auf `windows-latest` mit **Python 3.11** und erledigt automa
 1. Python-Abhängigkeiten installieren
 2. Tesseract OCR und Inno Setup installieren
 3. unveränderte Legacy-Module aus `recovered/PYZ.pyz` materialisieren
-4. Such-, Build- und v1.0.8–1.2.9-Regressionsprüfungen ausführen
+4. Such-, Build- und v1.0.8–1.3.1-Regressionsprüfungen ausführen
 5. Vorab-Importdiagnose ausführen und protokollieren
 6. Windows-App mit PyInstaller als `onedir` bauen
 7. die erzeugte `JustInCard.exe --self-test` ausführen
@@ -83,7 +93,7 @@ Der Workflow läuft auf `windows-latest` mit **Python 3.11** und erledigt automa
 9. Windows-Installer erzeugen
 10. SHA-256-Prüfsummen erzeugen
 11. Build-Dateien und Logs separat als Artifacts hochladen
-12. bei einem Tag wie `v1.2.9` zusätzlich einen GitHub Release erstellen
+12. bei einem Tag wie `v1.3.1` zusätzlich einen GitHub Release erstellen
 
 ### Build auf GitHub starten
 
@@ -136,8 +146,9 @@ justincard/v121_core.py                 sichere Mengenvalidierung beim Hinzufüg
 justincard/v121_features.py             Scanner-Mengenwahl und Reset auf 1
 justincard/v123_core.py                 Deck-Zonen- und Google-Kategorienlogik
 justincard/v123_features.py             Automatische Main-/Extra-Deck-UI
+justincard/v130_features.py             Deckvorschau, globale Kartensprache, Sortier-/Dauer-Sync-Patches
 assets/google_oauth_client.example.json OAuth-Desktop-Beispielkonfiguration
-justincard/version.py                  Version 1.2.9
+justincard/version.py                  Version 1.3.1
 recovered/PYZ.pyz                      Recovery-Basis unveränderter Legacy-Module
 scripts/build_windows.ps1              PyInstaller/Portable-Build
 scripts/build_installer.ps1            Installer-Build
@@ -153,4 +164,4 @@ JustInCard.spec                         PyInstaller-Spezifikation
 
 ## Hinweis zur Recovery-Basis
 
-Der ursprüngliche Windows-Upload 1.0.3 enthielt die bereits kompilierte portable Anwendung und den Installer, aber nicht das ursprüngliche Python-Repository. Die unveränderten Altmodule werden deshalb weiterhin reproduzierbar aus dem extrahierten Python-3.11-PYZ wiederhergestellt. Die Suchverbesserungen sowie die UI-/Backup-Erweiterungen ab 1.0.8 und die neueren Anzeige-, Preis-, Alt-Art- und Google-Cloud-Funktionen bis 1.2.9 liegen offen und editierbar im Repository.
+Der ursprüngliche Windows-Upload 1.0.3 enthielt die bereits kompilierte portable Anwendung und den Installer, aber nicht das ursprüngliche Python-Repository. Die unveränderten Altmodule werden deshalb weiterhin reproduzierbar aus dem extrahierten Python-3.11-PYZ wiederhergestellt. Die Suchverbesserungen sowie die UI-/Backup-Erweiterungen ab 1.0.8 und die neueren Anzeige-, Preis-, Alt-Art- und Google-Cloud-Funktionen bis 1.3.1 liegen offen und editierbar im Repository.

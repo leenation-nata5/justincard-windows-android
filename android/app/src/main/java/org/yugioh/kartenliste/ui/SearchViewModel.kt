@@ -7,7 +7,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import org.yugioh.kartenliste.data.local.AppPreferences
 import org.yugioh.kartenliste.data.model.Card
 import org.yugioh.kartenliste.data.model.CardPrint
 import org.yugioh.kartenliste.data.model.SearchFilters
@@ -28,8 +31,11 @@ data class SearchUiState(
 class SearchViewModel(
     private val cards: CardRepository,
     private val collection: CollectionRepository,
+    private val preferences: AppPreferences,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(SearchUiState())
+    private val _state = MutableStateFlow(
+        SearchUiState(filters = SearchFilters(language = preferences.cardTextLanguage)),
+    )
     val state: StateFlow<SearchUiState> = _state.asStateFlow()
     val catalogStatus = cards.catalogStatus
     private var searchJob: Job? = null
@@ -39,14 +45,32 @@ class SearchViewModel(
             cards.ensureCatalog()
             performSearch(0)
         }
+        viewModelScope.launch {
+            preferences.cardTextLanguageFlow.drop(1).collectLatest { language ->
+                _state.value = _state.value.copy(
+                    filters = _state.value.filters.copy(language = language),
+                    selectedCard = null,
+                    selectedPrint = null,
+                )
+                cards.ensureCatalog()
+                performSearch(0)
+            }
+        }
     }
 
     fun setFilters(filters: SearchFilters) {
-        _state.value = _state.value.copy(filters = filters, error = null)
+        _state.value = _state.value.copy(
+            filters = filters.copy(language = preferences.cardTextLanguage),
+            error = null,
+        )
     }
 
     fun clearFilters() {
-        _state.value = _state.value.copy(filters = SearchFilters(), selectedCard = null, selectedPrint = null)
+        _state.value = _state.value.copy(
+            filters = SearchFilters(language = preferences.cardTextLanguage),
+            selectedCard = null,
+            selectedPrint = null,
+        )
         search()
     }
 
@@ -107,7 +131,7 @@ class SearchViewModel(
         _state.value = _state.value.copy(message = null, error = null)
     }
 
-    fun forceCatalogSync(language: String = "de") {
+    fun forceCatalogSync(language: String = preferences.cardTextLanguage) {
         viewModelScope.launch {
             runCatching { cards.syncCatalog(language, force = true) }
                 .onSuccess { performSearch(0) }

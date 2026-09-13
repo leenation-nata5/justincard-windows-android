@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.yugioh.kartenliste.data.local.AppPreferences
+import org.yugioh.kartenliste.data.model.CardLanguages
 import org.yugioh.kartenliste.data.model.GoogleSpreadsheet
 import org.yugioh.kartenliste.data.model.SyncDevice
 import org.yugioh.kartenliste.data.repository.CardRepository
@@ -24,6 +25,7 @@ data class SettingsUiState(
     val deviceName: String,
     val themeMode: String,
     val reducedMotion: Boolean,
+    val cardTextLanguage: String,
     val automaticSync: Boolean,
     val spreadsheetId: String,
     val spreadsheetName: String,
@@ -62,6 +64,24 @@ class SettingsViewModel(
         _state.value = _state.value.copy(reducedMotion = preferences.reducedMotion)
     }
 
+    fun updateCardTextLanguage(value: String) {
+        val language = CardLanguages.normalize(value)
+        preferences.cardTextLanguage = language
+        _state.value = _state.value.copy(cardTextLanguage = language, busy = true, error = null)
+        viewModelScope.launch {
+            runCatching { cards.syncCatalog(language, force = false) }
+                .onSuccess { count ->
+                    val sourceNote = if (CardLanguages.hasRemoteCatalog(language)) {
+                        "$count Kartendatensätze sind für ${CardLanguages.label(language)} verfügbar."
+                    } else {
+                        "${CardLanguages.label(language)} wird verwendet, sobald lokalisierte Daten vorhanden sind; fehlende Texte fallen auf Englisch zurück."
+                    }
+                    _state.value = settled(message = sourceNote)
+                }
+                .onFailure { _state.value = settled(error = it.message) }
+        }
+    }
+
     fun updateAutomaticSync(value: Boolean) {
         preferences.automaticSync = value
         _state.value = _state.value.copy(automaticSync = preferences.automaticSync)
@@ -70,7 +90,7 @@ class SettingsViewModel(
     fun refreshCatalog() {
         viewModelScope.launch {
             _state.value = _state.value.copy(busy = true)
-            runCatching { cards.syncCatalog("de", force = true) }
+            runCatching { cards.syncCatalog(preferences.cardTextLanguage, force = true) }
                 .onSuccess { _state.value = settled(message = "$it Kartenabbildungen wurden indexiert.") }
                 .onFailure { _state.value = settled(error = it.message) }
         }
@@ -93,7 +113,7 @@ class SettingsViewModel(
                 googleSheets.save(token, sheet)
                 sheet
             }
-                .onSuccess { _state.value = settled(message = "Google-Tabelle erstellt und Sammlung gespeichert.") }
+                .onSuccess { _state.value = settled(message = "Google-Tabelle erstellt; Sammlung und Decks wurden gespeichert.") }
                 .onFailure { _state.value = settled(error = it.message) }
         }
     }
@@ -111,7 +131,7 @@ class SettingsViewModel(
         viewModelScope.launch {
             _state.value = _state.value.copy(busy = true, error = null)
             runCatching { googleSheets.save(token) }
-                .onSuccess { _state.value = settled(message = "Sammlung in Google gespeichert.") }
+                .onSuccess { _state.value = settled(message = "Sammlung und Decks wurden in Google gespeichert.") }
                 .onFailure { _state.value = settled(error = it.message) }
         }
     }
@@ -120,7 +140,7 @@ class SettingsViewModel(
         viewModelScope.launch {
             _state.value = _state.value.copy(busy = true, error = null)
             runCatching { googleSheets.load(token) }
-                .onSuccess { _state.value = settled(message = "Sammlung aus Google geladen.") }
+                .onSuccess { _state.value = settled(message = "Sammlung und Decks wurden aus Google geladen.") }
                 .onFailure { _state.value = settled(error = it.message) }
         }
     }
@@ -208,6 +228,7 @@ class SettingsViewModel(
         deviceName = preferences.deviceName,
         themeMode = preferences.themeMode,
         reducedMotion = preferences.reducedMotion,
+        cardTextLanguage = preferences.cardTextLanguage,
         automaticSync = preferences.automaticSync,
         spreadsheetId = preferences.spreadsheetId,
         spreadsheetName = preferences.spreadsheetName,

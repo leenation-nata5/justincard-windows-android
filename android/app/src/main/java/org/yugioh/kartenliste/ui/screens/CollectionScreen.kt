@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import org.yugioh.kartenliste.data.model.CardCondition
 import org.yugioh.kartenliste.data.model.CollectionItem
 import org.yugioh.kartenliste.data.model.CollectionSummary
+import org.yugioh.kartenliste.ui.CollectionSort
 import org.yugioh.kartenliste.ui.CollectionViewModel
 import org.yugioh.kartenliste.ui.components.CardThumbnail
 import org.yugioh.kartenliste.ui.components.ChoiceField
@@ -58,7 +59,9 @@ fun CollectionScreen(
     val summary by viewModel.summary.collectAsState()
     val query by viewModel.query.collectAsState()
     val selected by viewModel.selected.collectAsState()
-    val filtered = remember(items, query) { viewModel.filtered(items) }
+    val sort by viewModel.sort.collectAsState()
+    val ascending by viewModel.ascending.collectAsState()
+    val filtered = remember(items, query, sort, ascending) { viewModel.filtered(items) }
 
     Column(modifier.fillMaxSize()) {
         CollectionSummaryRow(summary)
@@ -72,6 +75,27 @@ fun CollectionScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp, vertical = 8.dp),
         )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ChoiceField(
+                label = "Sortierung",
+                value = sort.name,
+                choices = CollectionSort.entries.map { it.name to it.label },
+                onSelected = { viewModel.setSort(CollectionSort.valueOf(it)) },
+                modifier = Modifier.weight(1f),
+            )
+            ChoiceField(
+                label = "Richtung",
+                value = if (ascending) "asc" else "desc",
+                choices = listOf("asc" to "Aufsteigend", "desc" to "Absteigend"),
+                onSelected = { viewModel.setAscending(it == "asc") },
+                modifier = Modifier.weight(1f),
+            )
+        }
         Box(modifier = Modifier.fillMaxSize()) {
             if (filtered.isEmpty()) {
                 EmptyState(

@@ -111,7 +111,7 @@ class GoogleCloudContractTest {
         )
         assertEquals(3, workbook.getValue("Monsterkarten").size)
         assertEquals("Empfänger", workbook.getValue("Monsterkarten")[1][4])
-        assertEquals("Main Deck", workbook.getValue("Drachen Deck")[1][1])
+        assertEquals("Monster", workbook.getValue("Drachen Deck")[1][1])
         assertEquals(2, workbook.getValue("Drachen Deck").drop(2).count { it[1] == card.name })
     }
 

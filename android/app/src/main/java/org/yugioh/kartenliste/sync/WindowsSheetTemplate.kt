@@ -8,7 +8,7 @@ import org.yugioh.kartenliste.data.model.DeckCard
 import org.yugioh.kartenliste.data.model.DeckSection
 import java.util.Locale
 
-/** Builds the exact browser-visible workbook used by Just InCard Windows 1.2.7. */
+/** Builds the shared browser-visible workbook used by Just InCard Windows and Android. */
 object WindowsSheetTemplate {
     fun workbook(snapshot: CloudSnapshot, cards: Map<CardKey, Card>): Map<String, List<List<Any?>>> {
         val result = linkedMapOf<String, List<List<Any?>>>()
@@ -73,12 +73,20 @@ object WindowsSheetTemplate {
     ): List<List<Any?>> {
         val rows = mutableListOf(header(CloudContract.MONSTER_HEADERS))
         var firstSection = true
-        listOf(
-            DeckSection.MAIN to "Main Deck",
-            DeckSection.EXTRA to "Extra Deck",
-            DeckSection.SIDE to "Side Deck",
-        ).forEach { (section, label) ->
-            val sectionCards = deck.cards.filter { !it.deleted && it.quantity > 0 && it.section == section }
+        val active = deck.cards.filter { !it.deleted && it.quantity > 0 }
+        val main = active.filter { it.section == DeckSection.MAIN }
+
+        fun cardFor(item: DeckCard): Card = cards[item.cardKey] ?: fallbackCard(item)
+        val sections = listOf(
+            "Monster" to main.filter { family(cardFor(it)) == Family.MONSTER },
+            "Zauber" to main.filter { family(cardFor(it)) == Family.SPELL },
+            "Fallen" to main.filter { family(cardFor(it)) == Family.TRAP },
+            "Extra Deck" to active.filter { it.section == DeckSection.EXTRA },
+            "Side Deck" to active.filter { it.section == DeckSection.SIDE },
+        )
+
+        sections.forEach { (label, rawCards) ->
+            val sectionCards = rawCards.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.cardName })
             if (sectionCards.isEmpty()) return@forEach
             if (!firstSection) rows += listOf("", "", "", "", "", "")
             rows += listOf("", label, "", "", "", "")
@@ -87,7 +95,7 @@ object WindowsSheetTemplate {
                     it.cardKey == item.cardKey &&
                         it.selectedPrint.setCode.equals(item.setCode, ignoreCase = true)
                 }
-                val card = cards[item.cardKey] ?: fallbackCard(item)
+                val card = cardFor(item)
                 repeat(item.quantity.coerceAtLeast(1)) {
                     rows += deckRow(item, source, card)
                 }

@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QSpinBox,
     QVBoxLayout,
     QWidget,
@@ -43,6 +44,46 @@ def _widget_layout(widget: QWidget | None) -> Any:
         except TypeError:
             return None
     return candidate
+
+
+class _AdaptiveCollectionPreview(QLabel):
+    """Collection artwork label that always fits the complete card.
+
+    The legacy preview scaled downloaded images to the label's *maximum* size.
+    When Qt gave the right-hand detail panel less space, the pixmap was larger
+    than the actual label and was therefore clipped.  This label keeps the
+    source pixmap and rescales it to the current contents rectangle on every
+    resize using KeepAspectRatio, so the full card remains visible.
+    """
+
+    def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
+        super().__init__(text, parent)
+        self._source_pixmap = QPixmap()
+        self.setAlignment(Qt.AlignCenter)
+        self.setMinimumSize(96, 138)
+        self.setMaximumSize(220, 320)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+    def clear(self) -> None:
+        self._source_pixmap = QPixmap()
+        super().clear()
+
+    def setPixmap(self, pixmap: QPixmap) -> None:  # noqa: N802 - Qt API
+        self._source_pixmap = QPixmap(pixmap)
+        self._fit_pixmap()
+
+    def resizeEvent(self, event: Any) -> None:  # noqa: N802 - Qt API
+        super().resizeEvent(event)
+        self._fit_pixmap()
+
+    def _fit_pixmap(self) -> None:
+        if self._source_pixmap.isNull():
+            return
+        target = self.contentsRect().size()
+        if target.width() < 2 or target.height() < 2:
+            return
+        fitted = self._source_pixmap.scaled(target, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        QLabel.setPixmap(self, fitted)
 
 
 def _patch_collection_added_date() -> None:
@@ -151,11 +192,8 @@ def _patch_collection_preview() -> None:
         if not isinstance(layout, QVBoxLayout):
             return
 
-        preview = QLabel("Karte auswählen", host)
+        preview = _AdaptiveCollectionPreview("Karte auswählen", host)
         preview.setObjectName("CollectionCardPreview")
-        preview.setAlignment(Qt.AlignCenter)
-        preview.setMinimumSize(150, 210)
-        preview.setMaximumSize(220, 310)
         preview.setStyleSheet(
             "QLabel#CollectionCardPreview { border: 1px solid #2a4268; border-radius: 10px; "
             "background: #08101f; color: #9fb1cb; padding: 6px; }"
@@ -186,7 +224,7 @@ def _patch_collection_preview() -> None:
         preview.clear()
         preview.setText("Bild wird geladen …")
         request = QNetworkRequest(QUrl(url))
-        request.setRawHeader(b"User-Agent", b"JustInCard/1.2.9")
+        request.setRawHeader(b"User-Agent", b"JustInCard/1.3.1")
         reply = manager.get(request)
 
         def finished() -> None:
@@ -204,9 +242,7 @@ def _patch_collection_preview() -> None:
                 preview.setText("Vorschaubild nicht verfügbar")
             else:
                 preview.setText("")
-                preview.setPixmap(
-                    pixmap.scaled(preview.maximumSize(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                )
+                preview.setPixmap(pixmap)
             reply.deleteLater()
 
         reply.finished.connect(finished)
@@ -216,6 +252,14 @@ def _patch_collection_preview() -> None:
 
 
 def _patch_search_quantity_position() -> None:
+    """Place the amount selector directly before the collection add button.
+
+    The previous implementation tried to infer the set-selection combo box.
+    That was fragile across recovered UI revisions and could leave the amount
+    control at the bottom of the detail column.  The add button itself is the
+    stable anchor the user interacts with, so the selector now shares one
+    native horizontal action row with it.
+    """
     from justincard.ui.search_page import SearchPage
 
     original_init = SearchPage.__init__
@@ -223,71 +267,96 @@ def _patch_search_quantity_position() -> None:
     def page_init(self: Any, *args: Any, **kwargs: Any) -> None:
         original_init(self, *args, **kwargs)
 
-        def move_quantity() -> None:
+        def move_quantity_to_add_button() -> None:
+            if bool(getattr(self, "_jic_quantity_near_add_button", False)):
+                return
             spin = getattr(self, "add_quantity", None)
             label = getattr(self, "_quantity_label", None)
-            if not isinstance(spin, QSpinBox) or not isinstance(label, QLabel):
-                return
             detail = getattr(self, "detail", None)
-            if not isinstance(detail, QWidget):
+            if not isinstance(spin, QSpinBox) or not isinstance(label, QLabel) or not isinstance(detail, QWidget):
                 return
 
-            # Find the print/set selector. The price-condition combo lives in a
-            # QGroupBox named "Marktpreis" and is therefore excluded.
-            target: QComboBox | None = None
-            for combo in detail.findChildren(QComboBox):
-                parent: QWidget | None = combo.parentWidget()
-                in_price_group = False
-                while parent is not None and parent is not detail:
-                    if isinstance(parent, QGroupBox) and "marktpreis" in str(parent.title() or "").casefold():
-                        in_price_group = True
-                        break
-                    parent = parent.parentWidget()
-                if not in_price_group:
-                    target = combo
+            add_button: QPushButton | None = None
+            for button in detail.findChildren(QPushButton):
+                normalized = " ".join(str(button.text() or "").strip().casefold().split())
+                if "sammlung" in normalized and ("hinzufügen" in normalized or "hinzufugen" in normalized):
+                    add_button = button
                     break
-            if target is None:
+            if add_button is None:
                 return
 
-            parent = target.parentWidget()
+            parent = add_button.parentWidget()
             parent_layout = _widget_layout(parent)
-            if isinstance(parent_layout, QHBoxLayout):
-                parent_layout.removeWidget(label)
-                parent_layout.removeWidget(spin)
-                position = parent_layout.indexOf(target)
-                parent_layout.insertWidget(position + 1, label)
-                parent_layout.insertWidget(position + 2, spin)
+            if parent is None or parent_layout is None:
                 return
 
-            if isinstance(parent_layout, QFormLayout):
-                row, role = parent_layout.getWidgetPosition(target)
-                if row < 0:
-                    return
-                # Replace only the field slot with a compact row containing set
-                # selection + amount. This keeps labels and all other controls intact.
-                parent_layout.removeWidget(target)
-                container = QWidget(parent)
-                compact = QHBoxLayout(container)
-                compact.setContentsMargins(0, 0, 0, 0)
-                compact.setSpacing(8)
-                target.setParent(container)
-                label.setParent(container)
-                spin.setParent(container)
-                compact.addWidget(target, 1)
-                compact.addWidget(label)
-                compact.addWidget(spin)
-                parent_layout.setWidget(row, QFormLayout.FieldRole, container)
-                self._jic_set_quantity_container = container
+            # Remove the controls from the old bottom row before reparenting.
+            for widget in (label, spin):
+                current_parent = widget.parentWidget()
+                current_layout = _widget_layout(current_parent)
+                if current_layout is not None:
+                    try:
+                        current_layout.removeWidget(widget)
+                    except Exception:
+                        pass
+
+            host = QWidget(parent)
+            host.setObjectName("SearchAddActionRow")
+            row = QHBoxLayout(host)
+            row.setContentsMargins(0, 0, 0, 0)
+            row.setSpacing(10)
+
+            label.setParent(host)
+            spin.setParent(host)
+            spin.setMinimumWidth(76)
+            spin.setMaximumWidth(96)
+            spin.setToolTip("Menge, die beim Klick auf 'Zur Sammlung hinzufügen' übernommen wird.")
+
+            # Preserve the add button's exact styling and signal connections;
+            # only move the existing widget into the new native action row.
+            placed = False
+            if isinstance(parent_layout, (QVBoxLayout, QHBoxLayout)):
+                index = parent_layout.indexOf(add_button)
+                if index >= 0:
+                    parent_layout.removeWidget(add_button)
+                    add_button.setParent(host)
+                    row.addWidget(label)
+                    row.addWidget(spin)
+                    row.addWidget(add_button, 1)
+                    parent_layout.insertWidget(index, host)
+                    placed = True
+            elif isinstance(parent_layout, QFormLayout):
+                form_row, role = parent_layout.getWidgetPosition(add_button)
+                if form_row >= 0:
+                    parent_layout.removeWidget(add_button)
+                    add_button.setParent(host)
+                    row.addWidget(label)
+                    row.addWidget(spin)
+                    row.addWidget(add_button, 1)
+                    parent_layout.setWidget(form_row, role, host)
+                    placed = True
+            elif isinstance(parent_layout, QGridLayout):
+                index = parent_layout.indexOf(add_button)
+                if index >= 0:
+                    grid_row, grid_col, row_span, col_span = parent_layout.getItemPosition(index)
+                    parent_layout.removeWidget(add_button)
+                    add_button.setParent(host)
+                    row.addWidget(label)
+                    row.addWidget(spin)
+                    row.addWidget(add_button, 1)
+                    parent_layout.addWidget(host, grid_row, grid_col, row_span, col_span)
+                    placed = True
+
+            if not placed:
+                host.deleteLater()
                 return
 
-            if isinstance(parent_layout, QGridLayout):
-                idx = parent_layout.indexOf(target)
-                if idx >= 0:
-                    row, col, row_span, col_span = parent_layout.getItemPosition(idx)
-                    parent_layout.addWidget(label, row, col + col_span)
-                    parent_layout.addWidget(spin, row, col + col_span + 1)
+            self._jic_quantity_near_add_button = True
+            self._jic_quantity_action_host = host
 
-        QTimer.singleShot(0, move_quantity)
+        # Run after all older UI overlays have completed their zero-delay work.
+        QTimer.singleShot(0, move_quantity_to_add_button)
+        QTimer.singleShot(120, move_quantity_to_add_button)
 
     SearchPage.__init__ = page_init
 

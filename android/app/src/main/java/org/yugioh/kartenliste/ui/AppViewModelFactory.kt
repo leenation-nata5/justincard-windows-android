@@ -12,11 +12,11 @@ class AppViewModelFactory(
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T = when {
         modelClass.isAssignableFrom(SearchViewModel::class.java) ->
-            SearchViewModel(container.cards, container.collection) as T
+            SearchViewModel(container.cards, container.collection, container.preferences) as T
         modelClass.isAssignableFrom(CollectionViewModel::class.java) ->
-            CollectionViewModel(container.collection) as T
+            CollectionViewModel(container.collection, container.cards, container.preferences) as T
         modelClass.isAssignableFrom(DeckViewModel::class.java) ->
-            DeckViewModel(container.decks, container.collection) as T
+            DeckViewModel(container.decks, container.collection, container.cards, container.preferences) as T
         modelClass.isAssignableFrom(ScanViewModel::class.java) ->
             ScanViewModel(container.cards, container.collection) as T
         modelClass.isAssignableFrom(SettingsViewModel::class.java) ->

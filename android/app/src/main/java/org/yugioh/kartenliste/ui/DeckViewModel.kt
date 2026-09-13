@@ -2,32 +2,92 @@ package org.yugioh.kartenliste.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.yugioh.kartenliste.data.local.AppPreferences
 import org.yugioh.kartenliste.data.model.CollectionItem
 import org.yugioh.kartenliste.data.model.Deck
 import org.yugioh.kartenliste.data.model.DeckCard
 import org.yugioh.kartenliste.data.model.DeckSection
+import org.yugioh.kartenliste.data.repository.CardRepository
 import org.yugioh.kartenliste.data.repository.CollectionRepository
 import org.yugioh.kartenliste.data.repository.DeckRepository
+
+enum class DeckSort(val label: String) {
+    NAME("Name"),
+    SET_CODE("Set-Code"),
+    QUANTITY("Menge"),
+}
 
 class DeckViewModel(
     private val repository: DeckRepository,
     collectionRepository: CollectionRepository,
+    private val cards: CardRepository,
+    preferences: AppPreferences,
 ) : ViewModel() {
-    val decks = repository.decks
-    val collection = collectionRepository.items
+    val decks: StateFlow<List<Deck>> = combine(repository.decks, preferences.cardTextLanguageFlow) { values, language -> values to language }
+        .map { (values, language) ->
+            withContext(Dispatchers.IO) {
+                values.map { deck ->
+                    deck.copy(cards = deck.cards.map { row ->
+                        cards.localizedCard(row.cardKey, language)?.let { card ->
+                            row.copy(cardName = card.name, imageUrl = card.imageUrl.ifBlank { row.imageUrl })
+                        } ?: row
+                    })
+                }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    val collection: StateFlow<List<CollectionItem>> = combine(collectionRepository.items, preferences.cardTextLanguageFlow) { values, language -> values to language }
+        .map { (values, language) ->
+            withContext(Dispatchers.IO) {
+                values.map { item ->
+                    cards.localizedCard(item.cardKey, language)?.let { card ->
+                        item.copy(cardName = card.name, imageUrl = card.imageUrl.ifBlank { item.imageUrl })
+                    } ?: item
+                }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     private val _selectedDeckId = MutableStateFlow<String?>(null)
     val selectedDeckId: StateFlow<String?> = _selectedDeckId.asStateFlow()
+    private val _sort = MutableStateFlow(DeckSort.NAME)
+    val sort: StateFlow<DeckSort> = _sort.asStateFlow()
+    private val _ascending = MutableStateFlow(true)
+    val ascending: StateFlow<Boolean> = _ascending.asStateFlow()
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
-    init { viewModelScope.launch { repository.refresh() } }
+    init {
+        viewModelScope.launch {
+            repository.refresh()
+            collectionRepository.refresh()
+        }
+    }
 
     fun selected(decks: List<Deck>): Deck? = decks.firstOrNull { it.id == _selectedDeckId.value } ?: decks.firstOrNull()
     fun select(deckId: String) { _selectedDeckId.value = deckId }
+    fun setSort(value: DeckSort) { _sort.value = value }
+    fun setAscending(value: Boolean) { _ascending.value = value }
+
+    fun sorted(cards: List<DeckCard>): List<DeckCard> {
+        val comparator = when (_sort.value) {
+            DeckSort.NAME -> compareBy<DeckCard, String>(String.CASE_INSENSITIVE_ORDER) { it.cardName }
+            DeckSort.SET_CODE -> compareBy<DeckCard, String>(String.CASE_INSENSITIVE_ORDER) { it.setCode }
+            DeckSort.QUANTITY -> compareBy<DeckCard> { it.quantity }
+        }
+        return if (_ascending.value) cards.sortedWith(comparator) else cards.sortedWith(comparator.reversed())
+    }
 
     fun create(name: String) {
         viewModelScope.launch {

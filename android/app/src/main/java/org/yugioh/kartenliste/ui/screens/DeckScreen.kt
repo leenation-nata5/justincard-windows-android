@@ -46,6 +46,7 @@ import org.yugioh.kartenliste.data.model.CollectionItem
 import org.yugioh.kartenliste.data.model.Deck
 import org.yugioh.kartenliste.data.model.DeckCard
 import org.yugioh.kartenliste.data.model.DeckSection
+import org.yugioh.kartenliste.ui.DeckSort
 import org.yugioh.kartenliste.ui.DeckViewModel
 import org.yugioh.kartenliste.ui.components.CardThumbnail
 import org.yugioh.kartenliste.ui.components.ChoiceField
@@ -62,6 +63,8 @@ fun DeckScreen(
     val decks by viewModel.decks.collectAsState()
     val collection by viewModel.collection.collectAsState()
     val selectedId by viewModel.selectedDeckId.collectAsState()
+    val sort by viewModel.sort.collectAsState()
+    val ascending by viewModel.ascending.collectAsState()
     val selected = remember(decks, selectedId) { viewModel.selected(decks) }
     var createDialog by remember { mutableStateOf(false) }
     var editDialog by remember { mutableStateOf(false) }
@@ -117,6 +120,11 @@ fun DeckScreen(
                 onEdit = { editDialog = true },
                 onAdd = { addDialog = true },
                 onQuantity = viewModel::changeQuantity,
+                sort = sort,
+                ascending = ascending,
+                onSort = viewModel::setSort,
+                onAscending = viewModel::setAscending,
+                sortCards = viewModel::sorted,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -168,6 +176,11 @@ private fun DeckContent(
     onEdit: () -> Unit,
     onAdd: () -> Unit,
     onQuantity: (DeckCard, Int) -> Unit,
+    sort: DeckSort,
+    ascending: Boolean,
+    onSort: (DeckSort) -> Unit,
+    onAscending: (Boolean) -> Unit,
+    sortCards: (List<DeckCard>) -> List<DeckCard>,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier) {
@@ -196,6 +209,27 @@ private fun DeckContent(
             StatPill("Extra", deck.extraCount.toString())
             StatPill("Side", deck.sideCount.toString())
         }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ChoiceField(
+                label = "Deck sortieren",
+                value = sort.name,
+                choices = DeckSort.entries.map { it.name to it.label },
+                onSelected = { onSort(DeckSort.valueOf(it)) },
+                modifier = Modifier.weight(1f),
+            )
+            ChoiceField(
+                label = "Richtung",
+                value = if (ascending) "asc" else "desc",
+                choices = listOf("asc" to "Aufsteigend", "desc" to "Absteigend"),
+                onSelected = { onAscending(it == "asc") },
+                modifier = Modifier.weight(1f),
+            )
+        }
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -221,7 +255,7 @@ private fun DeckContent(
             modifier = Modifier.fillMaxSize(),
         ) {
             DeckSection.entries.forEach { section ->
-                val cards = deck.cards.filter { !it.deleted && it.section == section }
+                val cards = sortCards(deck.cards.filter { !it.deleted && it.section == section })
                 item(key = "header-${section.name}") {
                     Text(
                         "${section.label} · ${cards.sumOf { it.quantity }}",
@@ -317,24 +351,49 @@ private fun AddCollectionCardDialog(
 ) {
     var query by remember { mutableStateOf("") }
     var section by remember { mutableStateOf(DeckSection.MAIN) }
+    var preview by remember { mutableStateOf<CollectionItem?>(null) }
+    var sort by remember { mutableStateOf("name") }
+    var ascending by remember { mutableStateOf(true) }
     val key = TextNormalizer.searchKey(query)
     val compact = TextNormalizer.compactKey(query)
-    val filtered = remember(collection, key) {
-        if (key.isBlank()) collection else collection.filter {
+    val filtered = remember(collection, key, sort, ascending) {
+        val base = if (key.isBlank()) collection else collection.filter {
             TextNormalizer.searchKey(it.cardName).contains(key) ||
                 TextNormalizer.compactKey(it.selectedPrint.setCode).contains(compact)
         }
+        val comparator = when (sort) {
+            "set" -> compareBy<CollectionItem, String>(String.CASE_INSENSITIVE_ORDER) { it.selectedPrint.setCode }
+            "quantity" -> compareBy<CollectionItem> { it.quantity }
+            else -> compareBy<CollectionItem, String>(String.CASE_INSENSITIVE_ORDER) { it.cardName }
+        }
+        if (ascending) base.sortedWith(comparator) else base.sortedWith(comparator.reversed())
     }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Aus Sammlung hinzufügen") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    ChoiceField(
+                        label = "Bereich",
+                        value = section.name,
+                        choices = DeckSection.entries.map { it.name to it.label },
+                        onSelected = { section = DeckSection.valueOf(it) },
+                        modifier = Modifier.weight(1f),
+                    )
+                    ChoiceField(
+                        label = "Sortierung",
+                        value = sort,
+                        choices = listOf("name" to "Name", "set" to "Set-Code", "quantity" to "Menge"),
+                        onSelected = { sort = it },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
                 ChoiceField(
-                    label = "Bereich",
-                    value = section.name,
-                    choices = DeckSection.entries.map { it.name to it.label },
-                    onSelected = { section = DeckSection.valueOf(it) },
+                    label = "Richtung",
+                    value = if (ascending) "asc" else "desc",
+                    choices = listOf("asc" to "Aufsteigend", "desc" to "Absteigend"),
+                    onSelected = { ascending = it == "asc" },
                 )
                 OutlinedTextField(
                     value = query,
@@ -344,36 +403,68 @@ private fun AddCollectionCardDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                preview?.let { item ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            CardThumbnail(
+                                item.imageUrl,
+                                item.cardName,
+                                Modifier.width(86.dp).height(124.dp),
+                            )
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(item.cardName, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                Text(item.selectedPrint.setCode, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                                Text(item.selectedPrint.setName, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                Text("${item.selectedPrint.rarity} · verfügbar ×${item.quantity}", style = MaterialTheme.typography.bodySmall)
+                                Button(onClick = { onAdd(item, section) }) {
+                                    Icon(Icons.Default.Add, contentDescription = null)
+                                    Spacer(Modifier.width(5.dp))
+                                    Text("Hinzufügen")
+                                }
+                            }
+                        }
+                    }
+                }
                 LazyColumn(
-                    modifier = Modifier.height(360.dp),
+                    modifier = Modifier.height(if (preview == null) 360.dp else 220.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     items(filtered, key = CollectionItem::id) { item ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onAdd(item, section) }
+                                .clickable { preview = item }
                                 .padding(vertical = 5.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             CardThumbnail(
                                 item.imageUrl,
                                 item.cardName,
-                                Modifier
-                                    .width(42.dp)
-                                    .height(61.dp),
+                                Modifier.width(42.dp).height(61.dp),
                             )
                             Spacer(Modifier.width(10.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(item.cardName, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 Text("${item.selectedPrint.setCode} · verfügbar ×${item.quantity}", style = MaterialTheme.typography.bodySmall)
                             }
-                            Icon(Icons.Default.Add, contentDescription = "Hinzufügen", tint = MaterialTheme.colorScheme.primary)
+                            IconButton(onClick = { onAdd(item, section) }) {
+                                Icon(Icons.Default.Add, contentDescription = "Hinzufügen", tint = MaterialTheme.colorScheme.primary)
+                            }
                         }
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Fertig") } },
+        confirmButton = {
+            TextButton(onClick = { preview?.let { onAdd(it, section) } }, enabled = preview != null) { Text("Hinzufügen") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Fertig") } },
     )
 }

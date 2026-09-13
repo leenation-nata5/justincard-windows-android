@@ -151,23 +151,33 @@ def test_sorting_can_use_name_type_passcode_or_template_fields_without_exporting
     assert "Passcode" not in MONSTER_HEADERS
 
 
-def test_each_deck_receives_own_template_only_sheet_and_preserves_program_order():
+def test_each_deck_receives_own_template_only_sheet_and_preserves_requested_section_order():
     monster = {**sample(), "collection_key": "m", "zone": "main", "quantity": 2}
     monster["card"] = dict(monster["card"], type="Effect Monster", name="Monster Eins")
+    spell = {**sample(), "collection_key": "s", "zone": "main", "quantity": 1}
+    spell["card"] = dict(spell["card"], type="Spell Card", race="Quick-Play", name="Zauber Eins")
+    trap = {**sample(), "collection_key": "t", "zone": "main", "quantity": 1}
+    trap["card"] = dict(trap["card"], type="Trap Card", race="Counter", name="Falle Eins")
     extra = {**sample(), "collection_key": "e", "zone": "extra", "quantity": 1}
     extra["card"] = dict(extra["card"], type="Link Monster", name="Extra Eins", level=None)
     side = {**sample(), "collection_key": "d", "zone": "side", "quantity": 1}
     side["card"] = dict(side["card"], type="Trap Card", race="Counter", name="Side Eins")
-    deck = {"deck_id": "deck-1", "name": "Drachen Deck", "cards": [monster, extra, side]}
+    deck = {
+        "deck_id": "deck-1",
+        "name": "Drachen Deck",
+        "cards": [side, extra, trap, spell, monster],
+    }
     sheets = deck_sheet_map([deck], sort_field="name", sort_direction="desc")
     assert "Drachen Deck" in sheets
     rows = sheets["Drachen Deck"]
     assert tuple(rows[0]) == MONSTER_HEADERS
     assert all(len(row) == len(MONSTER_HEADERS) for row in rows)
     names = [row[1] for row in rows if len(row) > 1]
-    assert names.index("Monster Eins") < names.index("Extra Eins") < names.index("Side Eins")
+    for section in ("Monster", "Zauber", "Fallen", "Extra Deck", "Side Deck"):
+        assert section in names
+    assert names.index("Monster") < names.index("Zauber") < names.index("Fallen") < names.index("Extra Deck") < names.index("Side Deck")
+    assert names.index("Monster Eins") < names.index("Zauber Eins") < names.index("Falle Eins") < names.index("Extra Eins") < names.index("Side Eins")
     assert names.count("Monster Eins") == 2
-    assert "Main Deck" in names and "Extra Deck" in names and "Side Deck" in names
 
 
 def test_oauth_scopes_are_non_sensitive_per_file_and_appdata_only():

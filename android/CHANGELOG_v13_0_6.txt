@@ -1,9 +1,0 @@
-Just InCard Android 13.0.6
-
-- Google-Sheets-Scope für vollständigen Lese-/Schreibzugriff auf die gemeinsame Tabelle ergänzt.
-- Drive- und Sheets-Berechtigungen bleiben getrennt; private Cloud-Sicherung weiterhin im appDataFolder.
-- Nach XLSX-zu-Google-Sheets-Konvertierung wird auf die tatsächliche Verfügbarkeit der Tabelle gewartet.
-- Automatische Wiederholungen für temporäre Google-API-Fehler (429/5xx) ergänzt.
-- Vor jeder Cloud-Aktion wird still ein frisches Google-Zugriffstoken mit den aktuellen Scopes angefordert; abgelaufene Tokens werden dadurch nicht weiterverwendet.
-- Fehlertexte für 401/403/404 unterscheiden Anmeldung, Tabellenrechte und Drive-Rechte.
-- Status-8-OAuth-Fallback, Livebild, Scanner, Suche, Sammlung, Decks und übrige UI unverändert.

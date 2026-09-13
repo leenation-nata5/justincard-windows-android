@@ -15,8 +15,8 @@ android {
         applicationId = "org.yugioh.kartenliste.yugiohkartenliste"
         minSdk = 24
         targetSdk = 36
-        versionCode = 13006
-        versionName = "13.0.6"
+        versionCode = 13007
+        versionName = "13.0.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

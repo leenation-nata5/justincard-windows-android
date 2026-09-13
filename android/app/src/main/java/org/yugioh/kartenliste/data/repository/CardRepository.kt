@@ -7,8 +7,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import org.yugioh.kartenliste.data.local.AppPreferences
 import org.yugioh.kartenliste.data.local.JustInCardDatabase
 import org.yugioh.kartenliste.data.model.Card
+import org.yugioh.kartenliste.data.model.CardKey
+import org.yugioh.kartenliste.data.model.CardLanguages
 import org.yugioh.kartenliste.data.model.CardPrint
 import org.yugioh.kartenliste.data.model.ScanCandidate
 import org.yugioh.kartenliste.data.model.ScanSignals
@@ -26,19 +29,28 @@ sealed interface CatalogStatus {
 class CardRepository(
     private val database: JustInCardDatabase,
     private val remote: YgoProDeckClient,
+    private val preferences: AppPreferences,
 ) {
     private val syncMutex = Mutex()
     private val _catalogStatus = MutableStateFlow<CatalogStatus>(CatalogStatus.Ready)
     val catalogStatus: StateFlow<CatalogStatus> = _catalogStatus.asStateFlow()
 
+    val selectedTextLanguage: String
+        get() = preferences.cardTextLanguage
+
     suspend fun search(filters: SearchFilters, page: Int = 0, pageSize: Int = 50): SearchPage =
         withContext(Dispatchers.IO) {
-            val local = database.search(filters, page, pageSize)
-            if (local.total > 0 || page > 0 || !filters.hasAnyInput) return@withContext local
-
-            val value = filters.normalized()
+            val selected = CardLanguages.normalize(preferences.cardTextLanguage)
+            val effectiveLanguage = when {
+                database.catalogCount(selected) > 0 -> selected
+                CardLanguages.hasRemoteCatalog(selected) -> selected
+                else -> "en"
+            }
+            val value = filters.copy(language = effectiveLanguage).normalized()
+            val local = database.search(value, page, pageSize)
+            if (local.total > 0 || page > 0 || !value.hasAnyInput) return@withContext local
             if (value.ownedOnly) return@withContext local
-            val language = value.language.takeUnless { it == "all" } ?: "de"
+
             val remoteSelective = listOf(
                 value.name,
                 value.setQuery,
@@ -51,51 +63,72 @@ class CardRepository(
                 value.atkMin, value.atkMax, value.defMin, value.defMax,
                 value.levelMin, value.levelMax, value.scaleMin, value.scaleMax,
             ).any { it != null }
-            if (!remoteSelective && database.catalogCount(language) >= 1_000) return@withContext local
+            if (!remoteSelective && database.catalogCount(effectiveLanguage) >= 1_000) return@withContext local
 
             val remoteCards = runCatching {
-                if (remoteSelective) remote.search(value) else remote.allCards(language)
+                if (remoteSelective) remote.search(value) else remote.allCards(effectiveLanguage)
             }.getOrElse { error ->
                 if (database.catalogCount() == 0) throw error
                 emptyList()
             }
             if (remoteCards.isNotEmpty()) database.upsertCards(remoteCards)
-            database.search(filters, page, pageSize)
+            database.search(value, page, pageSize)
         }
 
-    suspend fun syncCatalog(language: String = "de", force: Boolean = false): Int =
+    suspend fun syncCatalog(language: String = preferences.cardTextLanguage, force: Boolean = false): Int =
         syncMutex.withLock {
             withContext(Dispatchers.IO) {
+                val requested = CardLanguages.normalize(language)
+                // Public YGOPRODeck catalog translations currently exist for
+                // EN/DE/FR/IT/PT. Other languages can still be displayed when
+                // they arrived through a local/imported/synchronised catalog.
+                if (!CardLanguages.hasRemoteCatalog(requested)) {
+                    val local = database.catalogCount(requested)
+                    if (local > 0) {
+                        _catalogStatus.value = CatalogStatus.Ready
+                        return@withContext local
+                    }
+                }
+                val actual = if (CardLanguages.hasRemoteCatalog(requested)) requested else "en"
                 try {
                     _catalogStatus.value = CatalogStatus.Syncing("Datenbankversion wird geprüft …", 0.05f)
                     val remoteVersion = runCatching(remote::databaseVersion).getOrDefault("unknown")
-                    val localVersion = database.metadata("catalog_version_$language")
-                    if (!force && localVersion != null && localVersion == remoteVersion && database.catalogCount(language) > 0) {
+                    val localVersion = database.metadata("catalog_version_$actual")
+                    if (!force && localVersion != null && localVersion == remoteVersion && database.catalogCount(actual) > 0) {
                         _catalogStatus.value = CatalogStatus.Ready
-                        return@withContext database.catalogCount(language)
+                        return@withContext database.catalogCount(actual)
                     }
                     _catalogStatus.value = CatalogStatus.Syncing("Kartendaten werden geladen …", null)
-                    val cards = remote.allCards(language)
+                    val cards = remote.allCards(actual)
                     _catalogStatus.value = CatalogStatus.Syncing("Lokaler Suchindex wird aktualisiert …", 0.85f)
-                    val count = database.replaceCatalog(cards.asSequence(), language, remoteVersion)
+                    val count = database.replaceCatalog(cards.asSequence(), actual, remoteVersion)
                     _catalogStatus.value = CatalogStatus.Ready
                     count
                 } catch (error: Throwable) {
                     val message = error.message ?: "Die Kartendaten konnten nicht aktualisiert werden."
                     _catalogStatus.value = CatalogStatus.Error(message)
                     if (database.catalogCount() == 0) throw error
-                    database.catalogCount(language)
+                    database.catalogCount(actual)
                 }
             }
         }
 
     suspend fun ensureCatalog() {
-        if (withContext(Dispatchers.IO) { database.catalogCount() } >= 1_000) return
-        runCatching { syncCatalog("de") }
+        val selected = CardLanguages.normalize(preferences.cardTextLanguage)
+        val effective = if (CardLanguages.hasRemoteCatalog(selected)) selected else "en"
+        if (withContext(Dispatchers.IO) { database.catalogCount(effective) } >= 1_000) return
+        runCatching { syncCatalog(selected) }
     }
 
-    suspend fun card(key: org.yugioh.kartenliste.data.model.CardKey): Card? =
-        withContext(Dispatchers.IO) { database.cardByKey(key) }
+    suspend fun localizedCard(key: CardKey, language: String = preferences.cardTextLanguage): Card? =
+        withContext(Dispatchers.IO) {
+            val requested = CardLanguages.normalize(language)
+            database.cardByIdentityLanguage(key.cardId, key.artworkId, requested)
+                ?: database.cardByIdentityLanguage(key.cardId, key.artworkId, "en")
+                ?: database.cardByKey(key)
+        }
+
+    suspend fun card(key: CardKey): Card? = localizedCard(key)
 
     suspend fun importCards(cards: Collection<Card>) = withContext(Dispatchers.IO) {
         database.upsertCards(cards.distinctBy { it.key.stableKey })
@@ -103,10 +136,13 @@ class CardRepository(
 
     suspend fun matchScan(signals: ScanSignals): List<ScanCandidate> = withContext(Dispatchers.IO) {
         val candidates = linkedMapOf<String, ScanCandidate>()
+        val selected = CardLanguages.normalize(preferences.cardTextLanguage)
+        val remoteLanguage = if (CardLanguages.hasRemoteCatalog(selected)) selected else "en"
 
         signals.setCodes.forEachIndexed { index, code ->
             val cards = database.cardsByPrintCode(code).ifEmpty {
-                runCatching { remote.search(SearchFilters(setQuery = code)) }.getOrDefault(emptyList()).also(database::upsertCards)
+                runCatching { remote.search(SearchFilters(setQuery = code, language = remoteLanguage)) }
+                    .getOrDefault(emptyList()).also(database::upsertCards)
             }
             cards.forEach { card ->
                 val exactPrint = exactPrint(card.prints, code)
@@ -117,8 +153,9 @@ class CardRepository(
 
         if (candidates.isEmpty()) {
             val cards = database.cardsByPasscodes(signals.passcodes).ifEmpty {
-                signals.passcodes.flatMap { runCatching { remote.cardById(it) }.getOrDefault(emptyList()) }
-                    .also(database::upsertCards)
+                signals.passcodes.flatMap {
+                    runCatching { remote.cardById(it, remoteLanguage) }.getOrDefault(emptyList())
+                }.also(database::upsertCards)
             }
             cards.forEachIndexed { index, card ->
                 putBest(candidates, ScanCandidate(
@@ -142,7 +179,22 @@ class CardRepository(
                 ))
             }
         }
-        candidates.values.sortedByDescending(ScanCandidate::score).take(8)
+
+        candidates.values
+            .sortedByDescending(ScanCandidate::score)
+            .take(8)
+            .map { candidate ->
+                val localized = database.cardByIdentityLanguage(
+                    candidate.card.key.cardId,
+                    candidate.card.key.artworkId,
+                    selected,
+                ) ?: database.cardByIdentityLanguage(
+                    candidate.card.key.cardId,
+                    candidate.card.key.artworkId,
+                    "en",
+                ) ?: candidate.card
+                candidate.copy(card = localized)
+            }
     }
 
     fun choosePrint(card: Card, setQuery: String): CardPrint? {
@@ -156,9 +208,7 @@ class CardRepository(
     }
 
     private fun choosePrintFromSignals(card: Card, signals: ScanSignals): CardPrint? =
-        signals.setCodes.firstNotNullOfOrNull { code ->
-            exactPrint(card.prints, code)
-        }
+        signals.setCodes.firstNotNullOfOrNull { code -> exactPrint(card.prints, code) }
 
     private fun exactPrint(prints: List<CardPrint>, code: String): CardPrint? {
         val compact = code.filter(Char::isLetterOrDigit)

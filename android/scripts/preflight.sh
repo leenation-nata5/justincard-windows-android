@@ -25,6 +25,7 @@ required=(
   app/src/main/java/org/yugioh/kartenliste/ui/screens/ScanScreen.kt
   app/src/main/java/org/yugioh/kartenliste/ui/screens/DeckScreen.kt
   app/src/main/java/org/yugioh/kartenliste/ui/screens/SettingsScreen.kt
+  app/src/main/java/org/yugioh/kartenliste/data/model/CardLanguages.kt
   app/src/main/java/org/yugioh/kartenliste/sync/CloudContract.kt
   app/src/main/java/org/yugioh/kartenliste/sync/WindowsCloudCodec.kt
   app/src/main/java/org/yugioh/kartenliste/sync/WindowsSheetTemplate.kt
@@ -47,6 +48,10 @@ grep -Fq 'minSdk = 24' app/build.gradle.kts \
   || fail "minSdk 24 fehlt. Google Play Services Auth 22.0.0 benoetigt mindestens API 24."
 grep -Fq 'targetSdk = 36' app/build.gradle.kts \
   || fail "targetSdk 36 fehlt."
+grep -Fq 'versionCode = 13007' app/build.gradle.kts \
+  || fail "Android versionCode 13007 fehlt."
+grep -Fq 'versionName = "13.0.7"' app/build.gradle.kts \
+  || fail "Android versionName 13.0.7 fehlt."
 grep -Fq 'enforcedPlatform("androidx.compose:compose-bom:2026.02.00")' app/build.gradle.kts \
   || fail "Compose BOM 2026.02.00 muss fuer API 36 strikt erzwungen werden."
 grep -Fq 'enforcedPlatform("io.coil-kt.coil3:coil-bom:3.5.0")' app/build.gradle.kts \
@@ -135,6 +140,12 @@ grep -Fq 'GOOGLE_DRIVE_UPLOAD_BASE' app/src/main/java/org/yugioh/kartenliste/syn
   || fail "Google Drive Upload-Endpunkt fehlt."
 grep -Fq 'touchDeck(db, deckId, deviceId)' app/src/main/java/org/yugioh/kartenliste/data/local/DeckStore.kt \
   || fail "Transaktionale Deckkarten-Korrektur fehlt."
+grep -Fq 'remoteCatalogLanguages' app/src/main/java/org/yugioh/kartenliste/data/model/CardLanguages.kt \
+  || fail "Appweite Kartentext-Sprachen fehlen."
+grep -Fq 'CardThumbnail' app/src/main/java/org/yugioh/kartenliste/ui/screens/DeckScreen.kt \
+  || fail "Deckbau-Kartenvorschau fehlt."
+grep -Fq 'Extra Deck' app/src/main/java/org/yugioh/kartenliste/sync/WindowsSheetTemplate.kt \
+  || fail "Deck-Sheets-Sortierung fehlt."
 
 if compgen -G 'windows/reference/JustInCard-Windows-7.zip.part-*' >/dev/null; then
   expected_parts=(00 01 02 03)

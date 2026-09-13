@@ -75,7 +75,7 @@ class GoogleSheetsSyncEngine(
 
     suspend fun save(token: String, spreadsheet: GoogleSpreadsheet? = null) = mutex.withLock {
         withContext(Dispatchers.IO) {
-            execute(SyncPhase.UPLOADING, "Sammlung wird in Google gespeichert …", 0.08f) {
+            execute(SyncPhase.UPLOADING, "Sammlung und Decks werden in Google gespeichert …", 0.08f) {
                 val selected = resolveSpreadsheet(token, spreadsheet)
                 val snapshot = localSnapshot()
                 val cards = resolveCards(snapshot)
@@ -84,14 +84,14 @@ class GoogleSheetsSyncEngine(
                 client.replaceVisibleWorkbook(selected.id, WindowsSheetTemplate.workbook(snapshot, cards))
                 _status.value = SyncStatus(SyncPhase.UPLOADING, "Vollständiges Cloud-Backup wird gespeichert …", 0.82f)
                 client.saveBackup(WindowsCloudCodec.encode(selected.id, preferences.deviceName, snapshot, cards))
-                finish(selected, "Sammlung in Google gespeichert")
+                finish(selected, "Sammlung und Decks in Google gespeichert")
             }
         }
     }
 
     suspend fun load(token: String, spreadsheet: GoogleSpreadsheet? = null) = mutex.withLock {
         withContext(Dispatchers.IO) {
-            execute(SyncPhase.DOWNLOADING, "Sammlung wird aus Google geladen …", 0.1f) {
+            execute(SyncPhase.DOWNLOADING, "Sammlung und Decks werden aus Google geladen …", 0.1f) {
                 val selected = resolveSpreadsheet(token, spreadsheet)
                 val payload = GoogleApiClient(token).loadBackup(selected.id)
                     ?: throw GoogleSyncException(
@@ -101,14 +101,14 @@ class GoogleSheetsSyncEngine(
                 _status.value = SyncStatus(SyncPhase.MERGING, "Cloud-Daten werden lokal zusammengeführt …", 0.64f)
                 cardRepository.importCards(remote.cards.values)
                 applyMerged(localSnapshot(), remote)
-                finish(selected, "Sammlung aus Google geladen")
+                finish(selected, "Sammlung und Decks aus Google geladen")
             }
         }
     }
 
     suspend fun sync(token: String, spreadsheet: GoogleSpreadsheet? = null) = mutex.withLock {
         withContext(Dispatchers.IO) {
-            execute(SyncPhase.DOWNLOADING, "Google-Sammlung wird geladen …", 0.08f) {
+            execute(SyncPhase.DOWNLOADING, "Google-Sammlung und Decks werden geladen …", 0.08f) {
                 val selected = resolveSpreadsheet(token, spreadsheet)
                 val client = GoogleApiClient(token)
                 val local = localSnapshot()

@@ -281,6 +281,18 @@ class JustInCardDatabase(context: Context) : SQLiteOpenHelper(
         return card?.let { attachPrints(db, listOf(it)).firstOrNull() }
     }
 
+    fun cardByIdentityLanguage(cardId: Long, artworkId: Long, language: String): Card? {
+        val db = readableDatabase
+        val card = db.rawQuery(
+            """SELECT c.* FROM cards c
+               WHERE c.card_id = ? AND c.language = ?
+               ORDER BY CASE WHEN c.artwork_id = ? THEN 0 ELSE 1 END, c.stable_key
+               LIMIT 1""".trimIndent(),
+            arrayOf(cardId.toString(), language.lowercase(), artworkId.toString()),
+        ).use { cursor -> if (cursor.moveToFirst()) cursor.toCard() else null }
+        return card?.let { attachPrints(db, listOf(it)).firstOrNull() }
+    }
+
     fun catalogCount(language: String? = null): Int {
         val (where, args) = if (language.isNullOrBlank() || language == "all") {
             "1 = 1" to emptyArray<String>()

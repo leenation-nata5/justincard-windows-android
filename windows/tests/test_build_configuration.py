@@ -228,11 +228,10 @@ def test_v125_template_keeps_receiver_as_monster_category_and_deck_order_note():
     assert 'BASE_TEMPLATE_SHEETS: tuple[str, ...] = (MONSTER_SHEET, SPELL_SHEET, TRAP_SHEET)' in cloud_text
     assert 'if "tuner" in text:' in cloud_text
     assert 'return "Empfänger"' in cloud_text
-    assert '"Main Deck"' in cloud_text
-    assert '"Extra Deck"' in cloud_text
-    assert '"Side Deck"' in cloud_text
+    for label in ('"Monster"', '"Zauber"', '"Fallen"', '"Extra Deck"', '"Side Deck"'):
+        assert label in cloud_text
     assert 'def choose_sort_before_export()' in ui_text
-    assert 'Deck-Reiter behalten unabhängig davon exakt die Reihenfolge aus dem Deckbuilder.' in ui_text
+    assert 'Deck-Reiter werden fest in Monster, Zauber, Fallen, Extra Deck und Side Deck gegliedert;' in ui_text
 
 
 def test_v123_deck_auto_zone_is_installed_and_manual_extra_button_hidden():

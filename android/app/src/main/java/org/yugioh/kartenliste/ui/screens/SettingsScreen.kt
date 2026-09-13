@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import org.yugioh.kartenliste.data.model.CardLanguages
 import org.yugioh.kartenliste.data.model.GoogleSpreadsheet
 import org.yugioh.kartenliste.data.model.SyncDevice
 import org.yugioh.kartenliste.data.model.SyncPhase
@@ -91,6 +92,17 @@ fun SettingsScreen(
                     value = state.themeMode,
                     choices = listOf("system" to "System", "dark" to "Dunkel", "light" to "Hell"),
                     onSelected = viewModel::updateTheme,
+                )
+                ChoiceField(
+                    label = "Kartentext-Sprache (appweit)",
+                    value = state.cardTextLanguage,
+                    choices = CardLanguages.choices,
+                    onSelected = viewModel::updateCardTextLanguage,
+                )
+                Text(
+                    "Die Sprache gilt für Suche, Vorschauen, Sammlung, Deckbau und Scanner-Ergebnisse. Fehlt eine lokalisierte Datenquelle, wird Englisch als sicherer Fallback verwendet.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 SettingSwitch(
                     title = "Reduzierte Bewegung",
@@ -232,7 +244,7 @@ fun SettingsScreen(
                     }
                 }
                 Text(
-                    "Speichern überträgt den lokalen Stand, Laden führt den Cloud-Stand lokal zusammen und Synchronisieren gleicht beide Richtungen ab. Windows 1.2.9 und Android verwenden dieselbe Tabelle und dasselbe private Drive-Backup.",
+                    "Speichern überträgt den lokalen Stand, Laden führt den Cloud-Stand lokal zusammen und Synchronisieren gleicht beide Richtungen ab. Windows 1.3.1 und Android verwenden dieselbe Tabelle und dasselbe private Drive-Backup; Sammlung und Decks werden gemeinsam übertragen.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -255,7 +267,7 @@ fun SettingsScreen(
 
         item {
             Text(
-                "Just InCard Android 13.0.6 · native Kotlin/Compose-Neuaufbau",
+                "Just InCard Android 13.0.7 · native Kotlin/Compose-Neuaufbau",
                 modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
