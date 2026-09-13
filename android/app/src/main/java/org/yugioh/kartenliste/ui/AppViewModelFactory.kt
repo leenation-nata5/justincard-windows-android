@@ -25,6 +25,7 @@ class AppViewModelFactory(
                 container.cards,
                 container.collection,
                 container.decks,
+                container.accountSync,
                 container.backups,
                 container.googleSheets,
                 contentResolver,

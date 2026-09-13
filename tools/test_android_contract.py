@@ -98,4 +98,15 @@ assert "rememberModalBottomSheetState(skipPartiallyExpanded = true)" in search_s
 assert "sheetGesturesEnabled = false" in search_screen
 assert "dragHandle = null" in search_screen
 
+account_client = (SRC / "sync/AccountApiClient.kt").read_text("utf-8")
+account_engine = (SRC / "sync/AccountSyncEngine.kt").read_text("utf-8")
+for token in ["JIC_ACCOUNT_API_BASE", "login.php", "sync.php", "revision_conflict", "justincard-account-sync-v1"]:
+    assert token in account_client
+for token in ["account_sync_base_v1.json", "mergePayloads", "collectionIdentity", "replaceAll", "suspend fun sync()"]:
+    assert token in account_engine
+for token in ["Wie möchtest du Just InCard verwenden?", "syncAccount(silent = true)"]:
+    assert token in main
+for token in ["Just InCard Konto", "Nur lokal verwenden", "Konto jetzt synchronisieren"]:
+    assert token in settings_screen
+
 print("Android source contract OK")

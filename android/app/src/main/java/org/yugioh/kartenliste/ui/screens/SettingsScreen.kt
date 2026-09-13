@@ -15,6 +15,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
@@ -45,7 +47,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
+import java.text.DateFormat
+import java.util.Date
 import org.yugioh.kartenliste.data.model.CardLanguages
 import org.yugioh.kartenliste.data.model.GoogleSpreadsheet
 import org.yugioh.kartenliste.data.model.SyncDevice
@@ -72,6 +78,8 @@ fun SettingsScreen(
     var createSheet by remember { mutableStateOf(false) }
     var confirmBackupImport by remember { mutableStateOf(false) }
     var sheetAddress by remember(state.spreadsheetId) { mutableStateOf(state.spreadsheetId) }
+    var accountLogin by remember { mutableStateOf(false) }
+    val uriHandler = LocalUriHandler.current
 
     LazyColumn(
         modifier = modifier,
@@ -110,6 +118,86 @@ fun SettingsScreen(
                     checked = state.reducedMotion,
                     onChecked = viewModel::updateReducedMotion,
                 )
+            }
+        }
+
+        item {
+            SettingsSection("Just InCard Konto") {
+                val accountActive = state.accountMode == "account" && state.accountLoggedIn
+                Text(
+                    if (accountActive) {
+                        "Kontomodus aktiv${if (state.accountLabel.isNotBlank()) ": ${state.accountLabel}" else ""}"
+                    } else {
+                        "Lokaler Modus – die App funktioniert vollständig ohne Account."
+                    },
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (accountActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    "Mit einem Konto werden nur Sammlung und Decks über justincard.de zwischen Windows und Android gesichert. Kartenbilder bleiben auf den Endgeräten.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (state.accountLoggedIn) {
+                    if (state.accountLastSyncAt > 0L) {
+                        Text(
+                            "Letzter Kontoabgleich: ${DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(state.accountLastSyncAt))}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    SettingSwitch(
+                        title = "Automatisch synchronisieren",
+                        subtitle = "Beim Start und anschließend ungefähr alle 5 Minuten, solange der Kontomodus aktiv ist.",
+                        checked = state.accountAutomaticSync,
+                        onChecked = viewModel::updateAccountAutomaticSync,
+                    )
+                    if (accountActive) {
+                        Button(
+                            onClick = { viewModel.syncAccount() },
+                            enabled = !state.busy,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Icon(Icons.Default.CloudSync, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Konto jetzt synchronisieren")
+                        }
+                        OutlinedButton(
+                            onClick = viewModel::useLocalMode,
+                            enabled = !state.busy,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text("Nur lokal verwenden") }
+                    } else {
+                        Button(
+                            onClick = viewModel::useAccountMode,
+                            enabled = !state.busy,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text("Kontomodus wieder aktivieren") }
+                    }
+                    OutlinedButton(
+                        onClick = viewModel::logoutAccount,
+                        enabled = !state.busy,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(Icons.Default.Logout, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Konto abmelden")
+                    }
+                } else {
+                    Button(
+                        onClick = { accountLogin = true },
+                        enabled = !state.busy,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(Icons.Default.AccountCircle, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Mit Just InCard Konto anmelden")
+                    }
+                    OutlinedButton(
+                        onClick = { uriHandler.openUri("https://justincard.de/register.php") },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Konto auf justincard.de erstellen") }
+                }
             }
         }
 
@@ -244,7 +332,7 @@ fun SettingsScreen(
                     }
                 }
                 Text(
-                    "Speichern überträgt den lokalen Stand, Laden führt den Cloud-Stand lokal zusammen und Synchronisieren gleicht beide Richtungen ab. Windows 1.3.1 und Android verwenden dieselbe Tabelle und dasselbe private Drive-Backup; Sammlung und Decks werden gemeinsam übertragen.",
+                    "Speichern überträgt den lokalen Stand, Laden führt den Cloud-Stand lokal zusammen und Synchronisieren gleicht beide Richtungen ab. Windows 1.3.2 und Android 13.0.8 verwenden dieselbe Tabelle und dasselbe private Drive-Backup; Sammlung und Decks werden gemeinsam übertragen.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -267,12 +355,24 @@ fun SettingsScreen(
 
         item {
             Text(
-                "Just InCard Android 13.0.7 · native Kotlin/Compose-Neuaufbau",
+                "Just InCard Android 13.0.8 · native Kotlin/Compose-Neuaufbau",
                 modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+
+    if (accountLogin) {
+        AccountLoginDialog(
+            busy = state.busy,
+            onLogin = { identity, password ->
+                viewModel.loginAccount(identity, password)
+                accountLogin = false
+            },
+            onRegister = { uriHandler.openUri("https://justincard.de/register.php") },
+            onDismiss = { accountLogin = false },
+        )
     }
 
     if (createSheet) {
@@ -301,6 +401,53 @@ fun SettingsScreen(
             dismissButton = { TextButton(onClick = { confirmBackupImport = false }) { Text("Abbrechen") } },
         )
     }
+}
+
+@Composable
+fun AccountLoginDialog(
+    busy: Boolean,
+    onLogin: (String, String) -> Unit,
+    onRegister: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var identity by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
+        title = { Text("Just InCard Konto") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    "Melde dich mit demselben Account an, den du auf justincard.de erstellt hast. Die App bleibt zusätzlich vollständig offline nutzbar.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                OutlinedTextField(
+                    value = identity,
+                    onValueChange = { identity = it },
+                    label = { Text("Benutzername oder E-Mail") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Passwort") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                TextButton(onClick = onRegister) { Text("Noch kein Konto? Auf justincard.de erstellen") }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onLogin(identity.trim(), password) },
+                enabled = !busy && identity.isNotBlank() && password.isNotBlank(),
+            ) { Text("Anmelden") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("Abbrechen") } },
+    )
 }
 
 @Composable

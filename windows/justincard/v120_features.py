@@ -218,6 +218,10 @@ def _patch_database() -> None:
             except (TypeError, ValueError):
                 updated_at = 0.0
             try:
+                added_at = float(raw.get("added_at") or 0.0)
+            except (TypeError, ValueError):
+                added_at = 0.0
+            try:
                 key = self.collection_key(card, print_item, artwork_url)
                 with self.connect() as connection:
                     exists = connection.execute(
@@ -241,9 +245,10 @@ def _patch_database() -> None:
                             ("artwork_url", artwork_url),
                             ("language", str(raw.get("language") or card.get("_language") or "")),
                             ("card_json", self._json(card)),
+                            ("added_at", added_at if added_at > 0 else None),
                             ("updated_at", updated_at if updated_at > 0 else time.time()),
                         ):
-                            if column in columns:
+                            if column in columns and not (column == "added_at" and value is None):
                                 assignments.append(f"{column}=?")
                                 values.append(value)
                         if "wishlist" in columns:

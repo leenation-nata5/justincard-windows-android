@@ -1,12 +1,20 @@
-# Just InCard – Android 13.0.7 und Windows 1.3.1
+# Just InCard – Android 13.0.8 und Windows 1.3.2
 
 Dieses gemeinsame Repository enthält:
 
-- **Android 13.0.7** – native Kotlin-/Compose-Version 13 mit unverändertem Aufbau und unverändertem CameraX-/ML-Kit-Livebild
-- **Windows 1.3.1** – Desktop-Version mit Deckvorschau, appweiter Kartentext-Sprache, dauerhafter Google-Synchronisierung sowie korrigierter Mengenposition und vollständig eingepasster Sammlungsvorschau
+- **Android 13.0.8** – native Kotlin-/Compose-Version 13 mit unverändertem Aufbau und unverändertem CameraX-/ML-Kit-Livebild
+- **Windows 1.3.2** – Desktop-Version mit Deckvorschau, appweiter Kartentext-Sprache, dauerhafter Google-Synchronisierung sowie korrigierter Mengenposition und vollständig eingepasster Sammlungsvorschau
 - einen GitHub-Actions-Workflow, der Android und Windows nach derselben Validierung parallel baut
 
-## Änderungen in Android 13.0.7
+## Neues Just-InCard-Konto / IONOS-Synchronisierung
+
+Windows 1.3.2 und Android 13.0.8 können jetzt wahlweise **vollständig lokal** oder mit einem Account von `https://justincard.de/` verwendet werden. Im Kontomodus werden ausschließlich Sammlung und Decks als geräteunabhängiger Snapshot über `https://justincard.de/api/v1/sync.php` gespeichert. Kartenbilder werden nicht auf dem Webspace abgelegt.
+
+Beim ersten Start erscheint auf beiden Plattformen eine Auswahl zwischen **Nur lokal verwenden** und **Mit Just InCard Konto anmelden**. Die lokale Datenbank bleibt auch im Kontomodus die Offline-Arbeitskopie. Automatischer Abgleich erfolgt beim Start und anschließend alle fünf Minuten, zusätzlich gibt es einen manuellen Sync in den Einstellungen. Google Sheets und lokale Backups bleiben parallel verfügbar.
+
+Für den Account-Sync muss auf dem IONOS-Webspace mindestens **JustInCard-Webspace 1.1.0** liegen. Bestehende Webspace-1.0.0-Accounts bleiben gültig; beim Update wird kein neues Konto benötigt.
+
+## Änderungen in Android 13.0.8
 
 Zusätzlich zu den Google-Stabilisierungen aus 13.0.6 wurden Deckbau, Kartentext-Sprache und Sortierung erweitert. Livebild und Scanner-Pipeline bleiben unverändert:
 
@@ -30,7 +38,7 @@ Die Validierung prüft weiterhin die Livebild-/OCR-Quelldateien gegen die Origin
 
 ## Gemeinsame Google-Sammlung
 
-Windows und Android verwenden weiterhin denselben Datenvertrag und dieselbe Tabelle. Die OAuth-Scopes sind absichtlich nicht mehr vollständig identisch: Windows 1.3.1 bleibt bei `drive.file` + `drive.appdata`; Android 13.0.7 ergänzt `spreadsheets`, damit bestehende gemeinsame Sheets zuverlässig gelesen und bearbeitet werden können.
+Windows und Android verwenden weiterhin denselben Datenvertrag und dieselbe Tabelle. Die OAuth-Scopes sind absichtlich nicht mehr vollständig identisch: Windows 1.3.2 bleibt bei `drive.file` + `drive.appdata`; Android 13.0.8 ergänzt `spreadsheets`, damit bestehende gemeinsame Sheets zuverlässig gelesen und bearbeitet werden können.
 
 - Google-Sheets-Reiter `Monsterkarten`, `Zauberkarten`, `Fallenkarten`
 - je ein sichtbarer Reiter pro Deck
@@ -59,8 +67,8 @@ Die bisherigen `ANDROID_…`-Varianten dieser vier Secrets werden ebenfalls akze
 ## Struktur
 
 ```text
-android/    Android-13.0.7-Quellprojekt
-windows/    Windows-1.3.1-Quellprojekt
+android/    Android-13.0.8-Quellprojekt
+windows/    Windows-1.3.2-Quellprojekt
 shared/     gemeinsamer Cloud-Datenvertrag
 tools/      gemeinsame Regressionstests
 .github/    paralleler Android-/Windows-Build

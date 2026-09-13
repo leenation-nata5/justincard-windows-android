@@ -15,8 +15,8 @@ android {
         applicationId = "org.yugioh.kartenliste.yugiohkartenliste"
         minSdk = 24
         targetSdk = 36
-        versionCode = 13007
-        versionName = "13.0.7"
+        versionCode = 13008
+        versionName = "13.0.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -24,6 +24,7 @@ android {
         buildConfigField("String", "GOOGLE_DRIVE_API_BASE", "\"https://www.googleapis.com/drive/v3/\"")
         buildConfigField("String", "GOOGLE_DRIVE_UPLOAD_BASE", "\"https://www.googleapis.com/upload/drive/v3/\"")
         buildConfigField("String", "GOOGLE_SHEETS_API_BASE", "\"https://sheets.googleapis.com/v4/\"")
+        buildConfigField("String", "JIC_ACCOUNT_API_BASE", "\"https://justincard.de/api/v1/\"")
     }
 
     signingConfigs {

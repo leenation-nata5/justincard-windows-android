@@ -50,6 +50,8 @@ hiddenimports = [
     "justincard.v123_features",
     "justincard.v128_features",
     "justincard.v130_features",
+    "justincard.account_sync",
+    "justincard.v132_features",
     "justincard.price_service",
 ]
 hiddenimports += collect_submodules("pytesseract")

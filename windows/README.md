@@ -1,6 +1,14 @@
-# Just InCard – Windows Desktop 1.3.1
+# Just InCard – Windows Desktop 1.3.2
 
-## Windows 1.3.1 – neue Bedien- und Cloud-Funktionen
+## Windows 1.3.2 – Just-InCard-Konto und IONOS-Synchronisierung
+- Beim ersten Start Wahl zwischen **Nur lokal** und **Mit Just InCard Konto**.
+- Konto-Login verwendet den bestehenden Account von `https://justincard.de/`.
+- Sammlung und Decks werden über `https://justincard.de/api/v1/sync.php` synchronisiert.
+- Kartenbilder bleiben auf Windows/Android; auf dem Server werden keine Bilddateien gespeichert.
+- Account-Sync beim Start und optional alle fünf Minuten; manueller Abgleich in Einstellungen.
+- Die bestehende lokale Datenbank bleibt immer die Offline-Arbeitskopie.
+- Google Sheets und lokale Backups bleiben zusätzlich verfügbar.
+
 
 - Suchdetail: Die Mengenwahl sitzt jetzt direkt vor „Zur Sammlung hinzufügen“ in derselben Zeile und nicht mehr am unteren Rand der Detailansicht.
 - Sammlungsvorschau: Das Kartenbild wird dynamisch an den tatsächlich verfügbaren Bereich angepasst und immer vollständig mit beibehaltenem Seitenverhältnis dargestellt.
@@ -85,7 +93,7 @@ Der Workflow läuft auf `windows-latest` mit **Python 3.11** und erledigt automa
 1. Python-Abhängigkeiten installieren
 2. Tesseract OCR und Inno Setup installieren
 3. unveränderte Legacy-Module aus `recovered/PYZ.pyz` materialisieren
-4. Such-, Build- und v1.0.8–1.3.1-Regressionsprüfungen ausführen
+4. Such-, Build- und v1.0.8–1.3.2-Regressionsprüfungen ausführen
 5. Vorab-Importdiagnose ausführen und protokollieren
 6. Windows-App mit PyInstaller als `onedir` bauen
 7. die erzeugte `JustInCard.exe --self-test` ausführen
@@ -93,7 +101,7 @@ Der Workflow läuft auf `windows-latest` mit **Python 3.11** und erledigt automa
 9. Windows-Installer erzeugen
 10. SHA-256-Prüfsummen erzeugen
 11. Build-Dateien und Logs separat als Artifacts hochladen
-12. bei einem Tag wie `v1.3.1` zusätzlich einen GitHub Release erstellen
+12. bei einem Tag wie `v1.3.2` zusätzlich einen GitHub Release erstellen
 
 ### Build auf GitHub starten
 
@@ -147,8 +155,10 @@ justincard/v121_features.py             Scanner-Mengenwahl und Reset auf 1
 justincard/v123_core.py                 Deck-Zonen- und Google-Kategorienlogik
 justincard/v123_features.py             Automatische Main-/Extra-Deck-UI
 justincard/v130_features.py             Deckvorschau, globale Kartensprache, Sortier-/Dauer-Sync-Patches
+justincard/account_sync.py               IONOS-Account-API und geräteübergreifender Snapshot-Abgleich
+justincard/v132_features.py              Kontoauswahl, Login-UI und automatischer Account-Sync
 assets/google_oauth_client.example.json OAuth-Desktop-Beispielkonfiguration
-justincard/version.py                  Version 1.3.1
+justincard/version.py                  Version 1.3.2
 recovered/PYZ.pyz                      Recovery-Basis unveränderter Legacy-Module
 scripts/build_windows.ps1              PyInstaller/Portable-Build
 scripts/build_installer.ps1            Installer-Build
@@ -164,4 +174,4 @@ JustInCard.spec                         PyInstaller-Spezifikation
 
 ## Hinweis zur Recovery-Basis
 
-Der ursprüngliche Windows-Upload 1.0.3 enthielt die bereits kompilierte portable Anwendung und den Installer, aber nicht das ursprüngliche Python-Repository. Die unveränderten Altmodule werden deshalb weiterhin reproduzierbar aus dem extrahierten Python-3.11-PYZ wiederhergestellt. Die Suchverbesserungen sowie die UI-/Backup-Erweiterungen ab 1.0.8 und die neueren Anzeige-, Preis-, Alt-Art- und Google-Cloud-Funktionen bis 1.3.1 liegen offen und editierbar im Repository.
+Der ursprüngliche Windows-Upload 1.0.3 enthielt die bereits kompilierte portable Anwendung und den Installer, aber nicht das ursprüngliche Python-Repository. Die unveränderten Altmodule werden deshalb weiterhin reproduzierbar aus dem extrahierten Python-3.11-PYZ wiederhergestellt. Die Suchverbesserungen sowie die UI-/Backup-Erweiterungen ab 1.0.8 und die neueren Anzeige-, Preis-, Alt-Art- und Google-Cloud-Funktionen bis 1.3.2 liegen offen und editierbar im Repository.

@@ -61,6 +61,26 @@ class AppPreferences(context: Context) {
         get() = preferences.getBoolean(KEY_WELCOME_SHOWN, false)
         set(value) { preferences.edit().putBoolean(KEY_WELCOME_SHOWN, value).apply() }
 
+    var accountMode: String
+        get() = preferences.getString(KEY_ACCOUNT_MODE, "") ?: ""
+        set(value) { preferences.edit().putString(KEY_ACCOUNT_MODE, value).apply() }
+
+    var accountToken: String
+        get() = preferences.getString(KEY_ACCOUNT_TOKEN, "") ?: ""
+        set(value) { preferences.edit().putString(KEY_ACCOUNT_TOKEN, value).apply() }
+
+    var accountLabel: String
+        get() = preferences.getString(KEY_ACCOUNT_LABEL, "") ?: ""
+        set(value) { preferences.edit().putString(KEY_ACCOUNT_LABEL, value).apply() }
+
+    var accountAutomaticSync: Boolean
+        get() = preferences.getBoolean(KEY_ACCOUNT_AUTO_SYNC, true)
+        set(value) { preferences.edit().putBoolean(KEY_ACCOUNT_AUTO_SYNC, value).apply() }
+
+    var accountLastSyncAt: Long
+        get() = preferences.getLong(KEY_ACCOUNT_LAST_SYNC, 0L)
+        set(value) { preferences.edit().putLong(KEY_ACCOUNT_LAST_SYNC, value).apply() }
+
     fun syncProfile(): SyncProfile = SyncProfile(
         spreadsheetId = spreadsheetId,
         spreadsheetName = spreadsheetName,
@@ -81,5 +101,10 @@ class AppPreferences(context: Context) {
         private const val KEY_AUTO_SYNC = "automatic_sync"
         private const val KEY_LAST_SYNC = "last_sync_at"
         private const val KEY_WELCOME_SHOWN = "welcome_shown"
+        private const val KEY_ACCOUNT_MODE = "account_mode_v1308"
+        private const val KEY_ACCOUNT_TOKEN = "account_token_v1308"
+        private const val KEY_ACCOUNT_LABEL = "account_label_v1308"
+        private const val KEY_ACCOUNT_AUTO_SYNC = "account_auto_sync_v1308"
+        private const val KEY_ACCOUNT_LAST_SYNC = "account_last_sync_v1308"
     }
 }

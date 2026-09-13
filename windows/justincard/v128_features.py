@@ -224,7 +224,7 @@ def _patch_collection_preview() -> None:
         preview.clear()
         preview.setText("Bild wird geladen …")
         request = QNetworkRequest(QUrl(url))
-        request.setRawHeader(b"User-Agent", b"JustInCard/1.3.1")
+        request.setRawHeader(b"User-Agent", b"JustInCard/1.3.2")
         reply = manager.get(request)
 
         def finished() -> None:

@@ -1,0 +1,12 @@
+Just InCard Windows 1.3.2
+
+- Neues Just-InCard-Konto für den IONOS-Webspace.
+- Erster Start fragt klar zwischen rein lokaler Nutzung und Kontonutzung.
+- Die App bleibt auch ohne Account vollständig nutzbar.
+- Login mit Benutzername/E-Mail und Passwort des Accounts von justincard.de.
+- Sammlung und Decks werden über die neue Account-Sync-API zwischen Windows und Android abgeglichen.
+- Kartenbilder werden nicht zum Server hochgeladen; nur Karten-/Sammlungs- und Deckmetadaten werden synchronisiert.
+- Automatischer Kontoabgleich beim Start und alle fünf Minuten, zusätzlich manueller Sync in den Einstellungen.
+- Lokale Kopie bleibt immer erhalten, sodass Offline-Nutzung weiterhin möglich ist.
+- Drei-Wege-Abgleich mit lokalem Basisstand reduziert Konflikte zwischen mehreren Geräten.
+- Bestehende Google-Sheets-Synchronisierung und lokale Backups bleiben parallel erhalten.

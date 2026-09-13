@@ -44,6 +44,8 @@ REQUIRED = [
     "justincard/v123_features.py",
     "justincard/v128_features.py",
     "justincard/v130_features.py",
+    "justincard/account_sync.py",
+    "justincard/v132_features.py",
     "justincard/ui/toast.py",
     "assets/google_sheets_template.xlsx",
     "assets/google_oauth_client.json",
@@ -83,6 +85,8 @@ for relative in [
     "justincard/v123_features.py",
     "justincard/v128_features.py",
     "justincard/v130_features.py",
+    "justincard/account_sync.py",
+    "justincard/v132_features.py",
     "justincard/ui/toast.py",
     "tools/materialize_recovered_modules.py",
     "tools/smoke_imports.py",
@@ -111,7 +115,7 @@ if "datas += Tree(" in spec_text:
     raise SystemExit("PyInstaller spec still mixes Tree TOC entries into Analysis(datas=...)")
 if 'datas.append((str(tess), "tesseract"))' not in spec_text:
     raise SystemExit("Correct Tesseract (source, destination) data mapping is missing")
-for module in ("justincard.v110_core", "justincard.v110_features", "justincard.cloud_sync", "justincard.v120_features", "justincard.v121_core", "justincard.v121_features", "justincard.v123_core", "justincard.v123_features", "justincard.v128_features", "justincard.v130_features"):
+for module in ("justincard.v110_core", "justincard.v110_features", "justincard.cloud_sync", "justincard.v120_features", "justincard.v121_core", "justincard.v121_features", "justincard.v123_core", "justincard.v123_features", "justincard.v128_features", "justincard.v130_features", "justincard.account_sync", "justincard.v132_features"):
     if f'"{module}"' not in spec_text:
         raise SystemExit(f"PyInstaller hidden import missing: {module}")
 
@@ -216,7 +220,7 @@ for token in [
         raise SystemExit(f"Price token missing: {token}")
 
 main_text = (ROOT / "main.py").read_text(encoding="utf-8")
-for installer in ("install_v128_patches()", "install_v130_patches()"):
+for installer in ("install_v128_patches()", "install_v130_patches()", "install_v132_patches()"):
     if installer not in main_text:
         raise SystemExit(f"Current v{APP_VERSION} feature patch missing from main.py: {installer}")
 
@@ -231,6 +235,25 @@ for token in (
     if token not in v130_text:
         raise SystemExit(f"v1.3.0 feature token missing: {token}")
 
+v132_text = (ROOT / "justincard/v132_features.py").read_text(encoding="utf-8")
+account_sync_text = (ROOT / "justincard/account_sync.py").read_text(encoding="utf-8")
+for token in (
+    "Just InCard Konto (IONOS)",
+    "Nur lokal verwenden",
+    "Mit Just InCard Konto anmelden",
+    "install_v132_patches",
+):
+    if token not in v132_text:
+        raise SystemExit(f"v1.3.2 account UI token missing: {token}")
+for token in (
+    "justincard-account-sync-v1",
+    "sync_windows_account",
+    "merge_payloads",
+    "replace_windows_from_payload",
+):
+    if token not in account_sync_text:
+        raise SystemExit(f"v1.3.2 account sync token missing: {token}")
+
 v128_text = (ROOT / "justincard/v128_features.py").read_text(encoding="utf-8")
 for token in (
     "SearchAddActionRow",
@@ -239,7 +262,7 @@ for token in (
     "move_quantity_to_add_button",
 ):
     if token not in v128_text:
-        raise SystemExit(f"v1.3.1 UI hotfix token missing: {token}")
+        raise SystemExit(f"v1.3.2 UI hotfix token missing: {token}")
 for token in [
     'APP_UI_SELF_TEST_FLAG = "--ui-self-test"',
     "def run_ui_self_test()",

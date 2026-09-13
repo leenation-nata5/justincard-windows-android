@@ -1,5 +1,0 @@
-Just InCard Windows Desktop 1.3.1
-
-- Suche: Die Mengenwahl steht jetzt direkt vor dem Button „Zur Sammlung hinzufügen“ in derselben Aktionszeile. Die bisherige Mengenwahl am unteren Rand der Detailspalte entfällt optisch.
-- Sammlung: Die Kartenvorschau verwendet jetzt eine adaptive, native Seitenverhältnis-Skalierung. Das komplette Kartenbild wird innerhalb des tatsächlich verfügbaren Vorschaubereichs mit „KeepAspectRatio“ dargestellt und bei Größenänderungen neu eingepasst, statt an den Kanten abgeschnitten zu werden.
-- Bestehende Suche, Sammlung, Deckbau, globale Kartensprache, Google-Synchronisierung, Backups und Android 13.0.7 bleiben funktional unverändert.

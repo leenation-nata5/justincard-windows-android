@@ -17,6 +17,7 @@ import org.yugioh.kartenliste.data.model.SyncDevice
 import org.yugioh.kartenliste.data.repository.CardRepository
 import org.yugioh.kartenliste.data.repository.CollectionRepository
 import org.yugioh.kartenliste.data.repository.DeckRepository
+import org.yugioh.kartenliste.sync.AccountSyncEngine
 import org.yugioh.kartenliste.sync.BackupManager
 import org.yugioh.kartenliste.sync.CsvCollectionCodec
 import org.yugioh.kartenliste.sync.GoogleSheetsSyncEngine
@@ -26,6 +27,11 @@ data class SettingsUiState(
     val themeMode: String,
     val reducedMotion: Boolean,
     val cardTextLanguage: String,
+    val accountMode: String,
+    val accountLoggedIn: Boolean,
+    val accountLabel: String,
+    val accountAutomaticSync: Boolean,
+    val accountLastSyncAt: Long,
     val automaticSync: Boolean,
     val spreadsheetId: String,
     val spreadsheetName: String,
@@ -41,6 +47,7 @@ class SettingsViewModel(
     private val cards: CardRepository,
     private val collection: CollectionRepository,
     private val decks: DeckRepository,
+    private val accountSync: AccountSyncEngine,
     private val backups: BackupManager,
     private val googleSheets: GoogleSheetsSyncEngine,
     private val resolver: ContentResolver,
@@ -79,6 +86,74 @@ class SettingsViewModel(
                     _state.value = settled(message = sourceNote)
                 }
                 .onFailure { _state.value = settled(error = it.message) }
+        }
+    }
+
+    fun useLocalMode() {
+        accountSync.useLocalMode()
+        _state.value = snapshot().copy(message = "Lokaler Modus aktiv. Sammlung und Decks bleiben vollständig auf diesem Gerät.")
+    }
+
+    fun useAccountMode() {
+        if (preferences.accountToken.isBlank()) {
+            _state.value = _state.value.copy(error = "Bitte zuerst mit deinem Just-InCard-Konto anmelden.")
+            return
+        }
+        preferences.accountMode = "account"
+        _state.value = snapshot().copy(message = "Kontomodus aktiviert.")
+        syncAccount()
+    }
+
+    fun updateAccountAutomaticSync(value: Boolean) {
+        preferences.accountAutomaticSync = value
+        _state.value = _state.value.copy(accountAutomaticSync = value)
+    }
+
+    fun loginAccount(identity: String, password: String) {
+        if (identity.isBlank() || password.isBlank()) {
+            _state.value = _state.value.copy(error = "Bitte Benutzername/E-Mail und Passwort eingeben.")
+            return
+        }
+        val previousMode = preferences.accountMode
+        preferences.accountMode = "account"
+        _state.value = snapshot().copy(busy = true, error = null, message = null)
+        viewModelScope.launch {
+            runCatching {
+                accountSync.login(identity, password)
+                accountSync.sync()
+            }.onSuccess { report ->
+                _state.value = snapshot().copy(
+                    message = "Konto verbunden. ${report.collectionCount} Sammlungseinträge und ${report.deckCount} Decks wurden synchronisiert.",
+                )
+            }.onFailure { error ->
+                preferences.accountMode = previousMode
+                _state.value = snapshot().copy(error = error.message ?: "Kontoanmeldung fehlgeschlagen.")
+            }
+        }
+    }
+
+    fun logoutAccount() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(busy = true, error = null)
+            runCatching { accountSync.logout() }
+                .onSuccess { _state.value = snapshot().copy(message = "Just-InCard-Konto wurde abgemeldet. Lokale Daten bleiben erhalten.") }
+                .onFailure { _state.value = snapshot().copy(error = it.message) }
+        }
+    }
+
+    fun syncAccount(silent: Boolean = false) {
+        if (preferences.accountMode != "account" || preferences.accountToken.isBlank()) return
+        viewModelScope.launch {
+            if (!silent) _state.value = _state.value.copy(busy = true, error = null, message = null)
+            runCatching { accountSync.sync() }
+                .onSuccess { report ->
+                    _state.value = snapshot().copy(
+                        message = if (silent) null else "Konto synchronisiert: ${report.collectionCount} Sammlungseinträge, ${report.deckCount} Decks.",
+                    )
+                }
+                .onFailure { error ->
+                    _state.value = snapshot().copy(error = if (silent) null else error.message)
+                }
         }
     }
 
@@ -229,6 +304,11 @@ class SettingsViewModel(
         themeMode = preferences.themeMode,
         reducedMotion = preferences.reducedMotion,
         cardTextLanguage = preferences.cardTextLanguage,
+        accountMode = preferences.accountMode,
+        accountLoggedIn = preferences.accountToken.isNotBlank(),
+        accountLabel = preferences.accountLabel,
+        accountAutomaticSync = preferences.accountAutomaticSync,
+        accountLastSyncAt = preferences.accountLastSyncAt,
         automaticSync = preferences.automaticSync,
         spreadsheetId = preferences.spreadsheetId,
         spreadsheetName = preferences.spreadsheetName,

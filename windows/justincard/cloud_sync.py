@@ -160,6 +160,7 @@ def serialize_collection_record(record: dict[str, Any]) -> dict[str, Any]:
         "quantity": max(0, _safe_int(record.get("quantity"), 0)),
         "condition": str(record.get("condition") or "Unbewertet"),
         "note": str(record.get("note") or ""),
+        "added_at": _safe_float(record.get("added_at"), 0.0),
         "updated_at": _safe_float(record.get("updated_at"), 0.0),
         "card": card,
     }

@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -38,6 +39,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -52,11 +54,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.yugioh.kartenliste.sync.GoogleAuthorizationManager
 import org.yugioh.kartenliste.ui.AppViewModelFactory
@@ -65,6 +69,7 @@ import org.yugioh.kartenliste.ui.DeckViewModel
 import org.yugioh.kartenliste.ui.ScanViewModel
 import org.yugioh.kartenliste.ui.SearchViewModel
 import org.yugioh.kartenliste.ui.SettingsViewModel
+import org.yugioh.kartenliste.ui.screens.AccountLoginDialog
 import org.yugioh.kartenliste.ui.screens.CollectionScreen
 import org.yugioh.kartenliste.ui.screens.DeckScreen
 import org.yugioh.kartenliste.ui.screens.ScanScreen
@@ -125,6 +130,8 @@ private fun JustInCardApp(
     val scope = rememberCoroutineScope()
     var destination by rememberSaveable { mutableStateOf(Destination.SEARCH) }
     var googleToken by remember { mutableStateOf("") }
+    var startupAccountLogin by rememberSaveable { mutableStateOf(false) }
+    val uriHandler = LocalUriHandler.current
     val cameraAvailable = remember {
         activity.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)
     }
@@ -139,6 +146,20 @@ private fun JustInCardApp(
     val scanMessage by scanViewModel.message.collectAsState()
     val deckMessage by deckViewModel.message.collectAsState()
     val settingsState by settingsViewModel.state.collectAsState()
+
+    LaunchedEffect(
+        settingsState.accountMode,
+        settingsState.accountLoggedIn,
+        settingsState.accountAutomaticSync,
+    ) {
+        if (settingsState.accountMode == "account" && settingsState.accountLoggedIn && settingsState.accountAutomaticSync) {
+            settingsViewModel.syncAccount(silent = true)
+            while (true) {
+                delay(5 * 60 * 1000L)
+                settingsViewModel.syncAccount(silent = true)
+            }
+        }
+    }
 
     LaunchedEffect(searchState.message, searchState.error) {
         (searchState.error ?: searchState.message)?.let {
@@ -232,6 +253,38 @@ private fun JustInCardApp(
                 settingsViewModel.loadSpreadsheets(token)
             }
         }
+    }
+
+    if (settingsState.accountMode.isBlank() && !startupAccountLogin) {
+        AlertDialog(
+            onDismissRequest = settingsViewModel::useLocalMode,
+            title = { Text("Wie möchtest du Just InCard verwenden?") },
+            text = {
+                Text(
+                    "Du kannst Just InCard vollständig lokal ohne Konto verwenden. Mit einem Just-InCard-Konto von justincard.de werden nur Sammlung und Decks zusätzlich auf deinem IONOS-Webspace gesichert und zwischen Windows und Android synchronisiert. Kartenbilder bleiben auf den Endgeräten."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { startupAccountLogin = true }) { Text("Mit Konto anmelden") }
+            },
+            dismissButton = {
+                TextButton(onClick = settingsViewModel::useLocalMode) { Text("Nur lokal verwenden") }
+            },
+        )
+    }
+    if (startupAccountLogin) {
+        AccountLoginDialog(
+            busy = settingsState.busy,
+            onLogin = { identity, password ->
+                settingsViewModel.loginAccount(identity, password)
+                startupAccountLogin = false
+            },
+            onRegister = { uriHandler.openUri("https://justincard.de/register.php") },
+            onDismiss = {
+                startupAccountLogin = false
+                settingsViewModel.useLocalMode()
+            },
+        )
     }
 
     AdaptiveAppShell(

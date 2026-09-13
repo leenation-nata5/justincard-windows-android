@@ -2,7 +2,7 @@ Android source basis: JustInCard_v13_0_0_GitHub_buildfix8_20260830(2).zip
 SHA-256: fb68c6bda5f0d9d918a28f9a4351de74e2ed71f96993cd309c1b40c3431e824f
 
 The Android 13 Kotlin/Jetpack Compose source tree from this upload is the basis
-for Android 13.0.7. Its navigation, CameraX live preview, ML Kit OCR pipeline,
+for Android 13.0.8. Its navigation, CameraX live preview, ML Kit OCR pipeline,
 scanner screen and scan ViewModel are retained byte-for-byte.
 
 Only the requested Google collection synchronization and the deck-card

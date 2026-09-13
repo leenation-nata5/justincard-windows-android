@@ -1,0 +1,10 @@
+Just InCard Webspace 1.1.0
+
+- Neuer Account-Sync-Endpunkt /api/v1/sync.php für Windows und Android.
+- Bestehende 1.0.0-Accounts bleiben gültig; keine Neuregistrierung nötig.
+- Sammlung und Decks werden als geräteunabhängiger JSON-Snapshot gespeichert.
+- Optimistische Revisionen verhindern unbemerktes Überschreiben paralleler Synchronisationen.
+- Keine Kartenbilder werden serverseitig gespeichert.
+- Datenbanktabelle account_sync_payloads wird bei Bedarf automatisch angelegt.
+- Bestehende Login-, Registrierungs-, Dashboard- und ältere Collection/Deck-API bleiben erhalten.
+- Dashboard zeigt nach der App-Synchronisierung die Daten aus dem neuen Account-Snapshot.

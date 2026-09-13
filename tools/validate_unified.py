@@ -28,6 +28,8 @@ required = [
     "android/app/src/main/java/org/yugioh/kartenliste/sync/GoogleAuthorizationManager.kt",
     "android/app/src/main/java/org/yugioh/kartenliste/sync/GoogleApiClient.kt",
     "android/app/src/main/java/org/yugioh/kartenliste/sync/GoogleSheetsSyncEngine.kt",
+    "android/app/src/main/java/org/yugioh/kartenliste/sync/AccountApiClient.kt",
+    "android/app/src/main/java/org/yugioh/kartenliste/sync/AccountSyncEngine.kt",
     "android/app/src/main/java/org/yugioh/kartenliste/sync/WindowsCloudCodec.kt",
     "android/app/src/main/java/org/yugioh/kartenliste/sync/WindowsSheetTemplate.kt",
     "android/app/src/main/java/org/yugioh/kartenliste/ui/screens/SettingsScreen.kt",
@@ -39,9 +41,13 @@ required = [
     "windows/justincard/version.py",
     "windows/justincard/v128_features.py",
     "windows/justincard/v130_features.py",
+    "windows/justincard/account_sync.py",
+    "windows/justincard/v132_features.py",
     "windows/assets/google_oauth_client.json",
     ".github/workflows/build-all.yml",
     "shared/cloud-contract.md",
+    "shared/account-sync-contract.md",
+    "webspace/api/v1/sync.php",
 ]
 for item in required:
     need(item)
@@ -79,8 +85,8 @@ gradle = need("android/app/build.gradle.kts").read_text("utf-8")
 for token in [
     'compileSdk = 36',
     'targetSdk = 36',
-    'versionCode = 13007',
-    'versionName = "13.0.7"',
+    'versionCode = 13008',
+    'versionName = "13.0.8"',
     'play-services-auth:22.0.0',
     'GOOGLE_DRIVE_API_BASE',
     'GOOGLE_DRIVE_UPLOAD_BASE',
@@ -96,7 +102,7 @@ for token in [
     "build-windows:",
     "windows-latest",
     "ubuntu-latest",
-    'ANDROID_VERSION: "13.0.7"',
+    'ANDROID_VERSION: "13.0.8"',
     'sdkmanager "platforms;android-36"',
     'gradle-version: "9.5.0"',
     ":app:testDebugUnitTest :app:lintDebug",
@@ -151,7 +157,7 @@ for token in [
     "Google Sheets verweigert den Zugriff",
 ]:
     if token not in google_api:
-        errors.append(f"Android 13.0.7 Google retry/permission fix missing {token}")
+        errors.append(f"Android 13.0.8 Google retry/permission fix missing {token}")
 
 google_auth = need(
     "android/app/src/main/java/org/yugioh/kartenliste/sync/GoogleAuthorizationManager.kt"
@@ -234,10 +240,10 @@ for token in ["Monster", "Zauber", "Fallen", "Extra Deck", "Side Deck"]:
     if token not in windows_sheet:
         errors.append(f"Android deck sheet ordering missing {token}")
 
-# Windows 1.3.1 extends the prior Windows tree with cross-platform deck/language improvements.
+# Windows 1.3.2 adds the IONOS account path while preserving local/Google operation.
 windows_version = need("windows/justincard/version.py").read_text("utf-8")
-if 'APP_VERSION = "1.3.1"' not in windows_version:
-    errors.append("Windows version is not 1.3.1")
+if 'APP_VERSION = "1.3.2"' not in windows_version:
+    errors.append("Windows version is not 1.3.2")
 windows_v128 = need("windows/justincard/v128_features.py").read_text("utf-8")
 for token in [
     "Backup erstellen",
@@ -246,7 +252,7 @@ for token in [
     "install_v128_patches",
 ]:
     if token not in windows_v128:
-        errors.append(f"Windows 1.3.1 feature missing {token}")
+        errors.append(f"Windows 1.3.2 feature missing {token}")
 for token in [
     "SearchAddActionRow",
     "_AdaptiveCollectionPreview",
@@ -254,7 +260,7 @@ for token in [
     "move_quantity_to_add_button",
 ]:
     if token not in windows_v128:
-        errors.append(f"Windows 1.3.1 UI hotfix missing {token}")
+        errors.append(f"Windows 1.3.2 UI hotfix missing {token}")
 windows_v130 = need("windows/justincard/v130_features.py").read_text("utf-8")
 for token in [
     "GLOBAL_LANGUAGE_SETTING",
@@ -264,10 +270,42 @@ for token in [
     "install_v130_patches",
 ]:
     if token not in windows_v130:
-        errors.append(f"Windows 1.3.1 feature missing {token}")
+        errors.append(f"Windows 1.3.2 feature missing {token}")
 for token in ["Monster", "Zauber", "Fallen", "Extra Deck", "Side Deck"]:
     if token not in windows_cloud:
         errors.append(f"Windows deck sheet ordering missing {token}")
+
+account_client = need(
+    "android/app/src/main/java/org/yugioh/kartenliste/sync/AccountApiClient.kt"
+).read_text("utf-8")
+for token in ["JIC_ACCOUNT_API_BASE", "login.php", "sync.php", "revision_conflict", "justincard-account-sync-v1"]:
+    if token not in account_client:
+        errors.append(f"Android account API missing {token}")
+account_engine = need(
+    "android/app/src/main/java/org/yugioh/kartenliste/sync/AccountSyncEngine.kt"
+).read_text("utf-8")
+for token in ["account_sync_base_v1.json", "mergePayloads", "collectionIdentity", "replaceAll", "suspend fun sync()"]:
+    if token not in account_engine:
+        errors.append(f"Android account sync missing {token}")
+for token in ["Wie möchtest du Just InCard verwenden?", "syncAccount(silent = true)"]:
+    if token not in main_activity:
+        errors.append(f"Android local/account startup choice missing {token}")
+for token in ["Just InCard Konto", "Nur lokal verwenden", "Konto jetzt synchronisieren"]:
+    if token not in settings:
+        errors.append(f"Android account settings UI missing {token}")
+
+windows_account = need("windows/justincard/account_sync.py").read_text("utf-8")
+for token in ["justincard-account-sync-v1", "sync_windows_account", "merge_payloads", "replace_windows_from_payload"]:
+    if token not in windows_account:
+        errors.append(f"Windows account sync missing {token}")
+windows_v132 = need("windows/justincard/v132_features.py").read_text("utf-8")
+for token in ["Just InCard Konto (IONOS)", "Nur lokal verwenden", "Mit Just InCard Konto anmelden", "install_v132_patches"]:
+    if token not in windows_v132:
+        errors.append(f"Windows 1.3.2 account UI missing {token}")
+web_sync = need("webspace/api/v1/sync.php").read_text("utf-8")
+for token in ["account_sync_payloads", "if_revision", "revision_conflict", "justincard-account-sync-v1"]:
+    if token not in web_sync:
+        errors.append(f"Webspace account sync endpoint missing {token}")
 
 windows_search = need("windows/justincard/ui/search_page.py").read_text("utf-8")
 if "self.detail.set_card(cards[0], self.current_set_query)" not in windows_search:

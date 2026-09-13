@@ -7,6 +7,7 @@ import org.yugioh.kartenliste.data.local.DeckStore
 import org.yugioh.kartenliste.data.local.DeviceStore
 import org.yugioh.kartenliste.data.local.JustInCardDatabase
 import org.yugioh.kartenliste.data.remote.YgoProDeckClient
+import org.yugioh.kartenliste.sync.AccountSyncEngine
 import org.yugioh.kartenliste.sync.BackupManager
 import org.yugioh.kartenliste.sync.GoogleSheetsSyncEngine
 
@@ -21,4 +22,5 @@ class AppContainer(context: Context) {
     val decks = DeckRepository(deckStore, preferences)
     val backups = BackupManager(context.contentResolver)
     val googleSheets = GoogleSheetsSyncEngine(context, preferences, cards, collection, decks)
+    val accountSync = AccountSyncEngine(context, preferences, collection, decks)
 }
