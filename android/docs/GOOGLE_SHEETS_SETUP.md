@@ -7,7 +7,7 @@ Die Google-Anbindung ist optional. Suche, Sammlung, Livebild, Decks, lokale Back
 Die Windows-Anmeldung und die Android-Anmeldung dürfen im selben Google-Cloud-Projekt liegen, verwenden aber unterschiedliche OAuth-Clienttypen. Das ist eine Vorgabe von Google und keine frei austauschbare App-Einstellung.
 
 - **Windows 1.3.3:** OAuth-Client vom Typ **Desktop-App** und die heruntergeladene `client_secret_....json`.
-- **Android 13.0.9:** OAuth-Client vom Typ **Android**. Hier wird keine Desktop-Client-JSON in die APK eingebaut. Google identifiziert die App über **Paketname + SHA-1 der Signatur**.
+- **Android 13.0.10:** OAuth-Client vom Typ **Android**. Hier wird keine Desktop-Client-JSON in die APK eingebaut. Google identifiziert die App über **Paketname + SHA-1 der Signatur**.
 
 Die bereitgestellte Desktop-JSON ist daher für Windows korrekt, behebt aber eine Android-Autorisierung mit Status 8 nicht.
 
@@ -73,7 +73,7 @@ Windows 1.3.3 bleibt unverändert bei:
 - `https://www.googleapis.com/auth/drive.file`
 - `https://www.googleapis.com/auth/drive.appdata`
 
-Android 13.0.9 fordert zusätzlich an:
+Android 13.0.10 fordert zusätzlich an:
 
 - `https://www.googleapis.com/auth/spreadsheets`
 
@@ -90,4 +90,4 @@ Der zusätzliche Android-Scope ist absichtlich eingebaut: Er erlaubt der Sheets 
 5. Falls der OAuth-Zustimmungsbildschirm im Testmodus ist: verwendetes Konto als Testnutzer eintragen.
 6. Google Drive API und Google Sheets API im selben Cloud-Projekt aktivieren.
 
-Android 13.0.9 startet die Autorisierung zuerst ohne erzwungenen Account-Picker. Falls Google Play-Dienste trotzdem Status 8 liefern, wird genau einmal mit expliziter Kontoauswahl wiederholt. Bleibt Status 8 bestehen, ist die serverseitige Android-OAuth-Registrierung (Paketname + SHA-1) zu prüfen. Paketname und SHA-1 werden direkt in der Fehlermeldung angezeigt.
+Android 13.0.10 startet die Autorisierung zuerst ohne erzwungenen Account-Picker. Falls Google Play-Dienste trotzdem Status 8 liefern, wird genau einmal mit expliziter Kontoauswahl wiederholt. Bleibt Status 8 bestehen, ist die serverseitige Android-OAuth-Registrierung (Paketname + SHA-1) zu prüfen. Paketname und SHA-1 werden direkt in der Fehlermeldung angezeigt.

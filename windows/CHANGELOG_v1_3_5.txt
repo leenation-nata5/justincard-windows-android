@@ -1,0 +1,9 @@
+Just InCard Windows 1.3.5
+
+- Kritischen IONOS-Konto-Sync behoben: Serverdaten werden vor jeder Upload-Freigabe vollständig lokal materialisiert und geprüft.
+- Konto-Import schreibt Sammlungseinträge robust direkt in das native SQLite-Schema, damit heruntergeladene Karten tatsächlich in der Sammlung erscheinen.
+- Decks werden erst nach erfolgreichem Sammlungsimport gebunden und anschließend verifiziert.
+- Automatische Synchronisierung bleibt gesperrt, bis der Serverstand auf diesem Gerät erfolgreich geladen wurde.
+- Fehlender lokaler Datensatz gilt nicht mehr automatisch als Löschung; dadurch kann eine leere/fehlerhafte lokale Datenbank den Server nicht mehr leeren.
+- Bereits angemeldete Installationen führen beim Start zuerst einen sicheren Restore statt eines Upload-Syncs aus.
+- Browserfreie Just-InCard-Kontoanmeldung bleibt erhalten.

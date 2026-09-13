@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
 from justincard.account_sync import (
     AUTO_SYNC_SETTING,
     MODE_SETTING,
+    RESTORE_READY_SETTING,
     TOKEN_SETTING,
     USER_SETTING,
     AccountApiError,
@@ -65,12 +66,14 @@ def _save_login(database: Any, token: str, user: dict[str, Any]) -> None:
     database.set_setting(USER_SETTING, json.dumps(user or {}, ensure_ascii=False))
     database.set_setting(MODE_SETTING, "account")
     database.set_setting(AUTO_SYNC_SETTING, True)
+    database.set_setting(RESTORE_READY_SETTING, False)
 
 
 def _clear_login(database: Any) -> None:
     database.set_setting(TOKEN_SETTING, "")
     database.set_setting(USER_SETTING, "")
     database.set_setting(MODE_SETTING, "local")
+    database.set_setting(RESTORE_READY_SETTING, False)
 
 
 def _refresh_data_pages(window: QWidget) -> None:
@@ -193,6 +196,9 @@ def _run_account_sync(window: QWidget, database: Any, *, interactive: bool = Tru
     if not token:
         if interactive:
             QMessageBox.information(window, "Just InCard Konto", "Bitte zuerst mit deinem Just-InCard-Konto anmelden.")
+        return
+    if not bool(database.get_setting(RESTORE_READY_SETTING, False)):
+        _run_account_restore(window, database, interactive=interactive, finished=finished)
         return
     window._jic_account_sync_busy = True
     task = _CloudTask(lambda: sync_windows_account(database, token))
@@ -413,6 +419,9 @@ def _patch_main_window() -> None:
                 return
             if not _account_token(database):
                 return
+            if not bool(database.get_setting(RESTORE_READY_SETTING, False)):
+                _run_account_restore(self, database, interactive=False)
+                return
             _run_account_sync(self, database, interactive=False)
 
         timer.timeout.connect(periodic)
@@ -421,8 +430,11 @@ def _patch_main_window() -> None:
         def first_start_choice() -> None:
             mode = str(database.get_setting(MODE_SETTING, "") or "").strip()
             if mode in {"local", "account"}:
-                if mode == "account" and _account_token(database) and bool(database.get_setting(AUTO_SYNC_SETTING, True)):
-                    _run_account_sync(self, database, interactive=False)
+                if mode == "account" and _account_token(database):
+                    # Always verify/materialise the server snapshot before this
+                    # device is ever allowed to upload.  This also repairs older
+                    # installations whose local account import was incomplete.
+                    _run_account_restore(self, database, interactive=False)
                 return
 
             dialog = QDialog(self)

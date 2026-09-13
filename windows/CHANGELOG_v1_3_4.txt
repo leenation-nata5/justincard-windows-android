@@ -1,7 +1,0 @@
-Just InCard Windows 1.3.4
-
-- Just-InCard-Kontoanmeldung unter Windows vollständig auf In-App-Login umgestellt.
-- Beim Anmelden mit Benutzername/E-Mail und Passwort wird kein Chrome-, Edge- oder anderes Browserfenster mehr geöffnet.
-- Der automatische Browser-Button zur Kontoerstellung wurde aus dem Windows-Login entfernt.
-- Vorhandener IONOS-Kontostand wird nach erfolgreicher Anmeldung weiterhin zuerst vollständig geladen.
-- Sammlung, Decks, lokale Nutzung, Google Sheets, Scanner, Backups und übrige Funktionen bleiben unverändert erhalten.

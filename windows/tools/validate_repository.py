@@ -244,7 +244,7 @@ for token in (
     "install_v132_patches",
 ):
     if token not in v132_text:
-        raise SystemExit(f"v1.3.4 account UI token missing: {token}")
+        raise SystemExit(f"v1.3.5 account UI token missing: {token}")
 for token in (
     "justincard-account-sync-v1",
     "sync_windows_account",
@@ -252,7 +252,7 @@ for token in (
     "replace_windows_from_payload",
 ):
     if token not in account_sync_text:
-        raise SystemExit(f"v1.3.4 account sync token missing: {token}")
+        raise SystemExit(f"v1.3.5 account sync token missing: {token}")
 
 v128_text = (ROOT / "justincard/v128_features.py").read_text(encoding="utf-8")
 for token in (
@@ -262,7 +262,7 @@ for token in (
     "move_quantity_to_add_button",
 ):
     if token not in v128_text:
-        raise SystemExit(f"v1.3.4 UI hotfix token missing: {token}")
+        raise SystemExit(f"v1.3.5 UI hotfix token missing: {token}")
 for token in [
     'APP_UI_SELF_TEST_FLAG = "--ui-self-test"',
     "def run_ui_self_test()",

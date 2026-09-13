@@ -16,7 +16,7 @@ object CloudContract {
     const val DRIVE_APPDATA_SCOPE = "https://www.googleapis.com/auth/drive.appdata"
     const val SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets"
 
-    // Android 13.0.9 requests the explicit Sheets scope in addition to the
+    // Android 13.0.10 requests the explicit Sheets scope in addition to the
     // per-file Drive scopes. This makes reading and editing an existing shared
     // Just-InCard spreadsheet independent from Drive's per-file authorization
     // while the private appData backup remains protected by drive.appdata.

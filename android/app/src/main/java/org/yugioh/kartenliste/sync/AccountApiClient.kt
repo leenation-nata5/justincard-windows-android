@@ -86,7 +86,7 @@ class AccountApiClient(
             readTimeout = 25_000
             useCaches = false
             setRequestProperty("Accept", "application/json")
-            setRequestProperty("User-Agent", "JustInCard-Android/13.0.9")
+            setRequestProperty("User-Agent", "JustInCard-Android/13.0.10")
             if (token.isNotBlank()) setRequestProperty("Authorization", "Bearer $token")
             if (body != null) {
                 doOutput = true

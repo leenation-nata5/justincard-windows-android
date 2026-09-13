@@ -50,8 +50,8 @@ grep -Fq 'targetSdk = 36' app/build.gradle.kts \
   || fail "targetSdk 36 fehlt."
 grep -Fq 'versionCode = 13009' app/build.gradle.kts \
   || fail "Android versionCode 13009 fehlt."
-grep -Fq 'versionName = "13.0.9"' app/build.gradle.kts \
-  || fail "Android versionName 13.0.9 fehlt."
+grep -Fq 'versionName = "13.0.10"' app/build.gradle.kts \
+  || fail "Android versionName 13.0.10 fehlt."
 grep -Fq 'enforcedPlatform("androidx.compose:compose-bom:2026.02.00")' app/build.gradle.kts \
   || fail "Compose BOM 2026.02.00 muss fuer API 36 strikt erzwungen werden."
 grep -Fq 'enforcedPlatform("io.coil-kt.coil3:coil-bom:3.5.0")' app/build.gradle.kts \

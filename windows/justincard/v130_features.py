@@ -372,7 +372,7 @@ def _patch_deck_preview() -> None:
                 return
             image.clear(); image.setText("Bild wird geladen …")
             request = QNetworkRequest(QUrl(url))
-            request.setRawHeader(b"User-Agent", b"JustInCard/1.3.4")
+            request.setRawHeader(b"User-Agent", b"JustInCard/1.3.5")
             reply = self._jic_deck_preview_manager.get(request)
 
             def finished() -> None:

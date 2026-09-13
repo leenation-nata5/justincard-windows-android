@@ -41,6 +41,7 @@ class AccountSyncEngine(
         preferences.accountLabel = result.label
         preferences.accountMode = "account"
         preferences.accountAutomaticSync = true
+        preferences.accountRestoreReady = false
         result
     }
 
@@ -50,6 +51,7 @@ class AccountSyncEngine(
         preferences.accountToken = ""
         preferences.accountLabel = ""
         preferences.accountMode = "local"
+        preferences.accountRestoreReady = false
         runCatching { baseFile.delete() }
     }
 
@@ -67,11 +69,26 @@ class AccountSyncEngine(
             val remoteDecks = remote.payload.optJSONArray("decks")?.length() ?: 0
             val hasRemoteData = remoteCollection > 0 || remoteDecks > 0
 
+            preferences.accountRestoreReady = false
             if (hasRemoteData) {
                 // First login is a restore operation: never upload an unrelated
                 // local database before the account snapshot has been loaded.
-                applyPayload(remote.payload)
+                // Keep a local rollback snapshot and verify that every server row
+                // can be read back before enabling any upload.
+                val previousLocal = buildLocalPayload()
+                try {
+                    applyPayload(remote.payload)
+                    verifyMaterialized(remote.payload)
+                } catch (error: Throwable) {
+                    runCatching { applyPayload(previousLocal) }
+                    throw AccountApiException(
+                        "Der Serverstand konnte nicht vollständig lokal übernommen werden. Aus Sicherheitsgründen wurde keine Synchronisierung zum Server gestartet.",
+                        0,
+                        "restore_failed",
+                    )
+                }
                 saveBase(remote.payload)
+                preferences.accountRestoreReady = true
                 preferences.accountLastSyncAt = System.currentTimeMillis()
                 return@withContext AccountSyncReport(remote.revision, remoteCollection, remoteDecks)
             }
@@ -87,6 +104,7 @@ class AccountSyncEngine(
                 remote.revision
             }
             saveBase(if (localCollection > 0 || localDecks > 0) local else remote.payload)
+            preferences.accountRestoreReady = true
             preferences.accountLastSyncAt = System.currentTimeMillis()
             AccountSyncReport(revision, localCollection, localDecks)
         }
@@ -96,6 +114,13 @@ class AccountSyncEngine(
         withContext(Dispatchers.IO) {
             val token = preferences.accountToken
             if (token.isBlank()) throw AccountApiException("Bitte zuerst mit deinem Just-InCard-Konto anmelden.", 401, "unauthorized")
+            if (!preferences.accountRestoreReady) {
+                throw AccountApiException(
+                    "Der Konto-Stand wurde auf diesem Gerät noch nicht sicher geladen. Bitte zuerst den Account laden; es wird nichts hochgeladen.",
+                    0,
+                    "restore_required",
+                )
+            }
 
             val base = loadBase()
             val local = inheritUnmodeledFields(buildLocalPayload(), base)
@@ -251,6 +276,32 @@ class AccountSyncEngine(
         )
     }
 
+    private suspend fun verifyMaterialized(expectedPayload: JSONObject) {
+        val expected = normalizePayload(expectedPayload)
+        val actual = normalizePayload(buildLocalPayload())
+        val actualCollection = objectMap(actual.optJSONArray("collection"))
+        val missingCollection = objects(expected.optJSONArray("collection"))
+            .filter { it.optString("sync_id").isNotBlank() && !actualCollection.containsKey(it.optString("sync_id")) }
+        val actualDecks = objectMap(actual.optJSONArray("decks"))
+        var missingDeckEntries = 0
+        objects(expected.optJSONArray("decks")).forEach { expectedDeck ->
+            val actualDeck = actualDecks[expectedDeck.optString("sync_id")]
+            if (actualDeck == null) {
+                missingDeckEntries += 1
+            } else {
+                val actualCards = objectMap(actualDeck.optJSONArray("cards"))
+                missingDeckEntries += objects(expectedDeck.optJSONArray("cards")).count { card ->
+                    card.optString("sync_id").isNotBlank() && !actualCards.containsKey(card.optString("sync_id"))
+                }
+            }
+        }
+        if (missingCollection.isNotEmpty() || missingDeckEntries > 0) {
+            throw IllegalStateException(
+                "Account restore incomplete: ${missingCollection.size} collection rows, $missingDeckEntries deck rows missing",
+            )
+        }
+    }
+
     private fun inheritUnmodeledFields(local: JSONObject, base: JSONObject): JSONObject {
         val baseCollection = objectMap(base.optJSONArray("collection"))
         objects(local.optJSONArray("collection")).forEach { item ->
@@ -329,16 +380,24 @@ class AccountSyncEngine(
                         else -> winner(l, r)
                     }
                 } else {
-                    val lChanged = !same(l, b)
-                    val rChanged = !same(r, b)
+                    // Missing local rows are not implicit deletions. A failed
+                    // restore must never turn an empty device database into an
+                    // empty server snapshot. Explicit tombstones can be added
+                    // later; until then retain data that exists on either side.
                     when {
-                        !lChanged && !rChanged -> b
-                        lChanged && !rChanged -> l
-                        rChanged && !lChanged -> r
                         l == null && r == null -> null
-                        l == null -> r // concurrent deletion/change: keep the changed data
+                        l == null -> r
                         r == null -> l
-                        else -> winner(l, r)
+                        else -> {
+                            val lChanged = !same(l, b)
+                            val rChanged = !same(r, b)
+                            when {
+                                !lChanged && !rChanged -> b
+                                lChanged && !rChanged -> l
+                                rChanged && !lChanged -> r
+                                else -> winner(l, r)
+                            }
+                        }
                     }
                 }
                 if (chosen != null) add(JSONObject(chosen.toString()))

@@ -145,7 +145,9 @@ class SettingsViewModel(
         if (preferences.accountMode != "account" || preferences.accountToken.isBlank()) return
         viewModelScope.launch {
             if (!silent) _state.value = _state.value.copy(busy = true, error = null, message = null)
-            runCatching { accountSync.sync() }
+            runCatching {
+                if (preferences.accountRestoreReady) accountSync.sync() else accountSync.loadAfterLogin()
+            }
                 .onSuccess { report ->
                     _state.value = snapshot().copy(
                         message = if (silent) null else "Konto synchronisiert: ${report.collectionCount} Sammlungseinträge, ${report.deckCount} Decks.",

@@ -12,8 +12,8 @@ permissions:
   contents: write
 
 env:
-  ANDROID_VERSION: "13.0.9"
-  WINDOWS_VERSION: "1.3.4"
+  ANDROID_VERSION: "13.0.10"
+  WINDOWS_VERSION: "1.3.5"
 
 jobs:
   validate:
@@ -30,7 +30,7 @@ jobs:
           python tools/test_android_contract.py
 
   build-android:
-    name: Android 13.0.9 / APK + AAB
+    name: Android 13.0.10 / APK + AAB
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -161,7 +161,7 @@ jobs:
           retention-days: 30
 
   build-windows:
-    name: Windows 1.3.4 / x64
+    name: Windows 1.3.5 / x64
     needs: validate
     runs-on: windows-latest
     timeout-minutes: 70

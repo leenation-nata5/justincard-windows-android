@@ -81,6 +81,10 @@ class AppPreferences(context: Context) {
         get() = preferences.getLong(KEY_ACCOUNT_LAST_SYNC, 0L)
         set(value) { preferences.edit().putLong(KEY_ACCOUNT_LAST_SYNC, value).apply() }
 
+    var accountRestoreReady: Boolean
+        get() = preferences.getBoolean(KEY_ACCOUNT_RESTORE_READY, false)
+        set(value) { preferences.edit().putBoolean(KEY_ACCOUNT_RESTORE_READY, value).apply() }
+
     fun syncProfile(): SyncProfile = SyncProfile(
         spreadsheetId = spreadsheetId,
         spreadsheetName = spreadsheetName,
@@ -106,5 +110,6 @@ class AppPreferences(context: Context) {
         private const val KEY_ACCOUNT_LABEL = "account_label_v1308"
         private const val KEY_ACCOUNT_AUTO_SYNC = "account_auto_sync_v1308"
         private const val KEY_ACCOUNT_LAST_SYNC = "account_last_sync_v1308"
+        private const val KEY_ACCOUNT_RESTORE_READY = "account_restore_ready_v1310"
     }
 }

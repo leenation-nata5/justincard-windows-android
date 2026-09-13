@@ -1,6 +1,0 @@
-Just InCard Android 13.0.9
-
-- Kontoanmeldung stellt einen vorhandenen Just-InCard-Kontostand jetzt zuerst vollständig lokal wieder her, bevor ein Upload möglich ist.
-- Ein wirklich leerer neuer Account kann weiterhin mit einer vorhandenen lokalen Sammlung und vorhandenen Decks initialisiert werden.
-- Dadurch kann eine frische Android-Installation einen bereits gefüllten Serverstand beim ersten Login nicht versehentlich überschreiben.
-- Lokaler Modus, Google Sheets, Livebild, Scanner, Suche, Sammlung und Deckbau bleiben erhalten.

@@ -1,4 +1,4 @@
-# Just InCard Android 13.0.9
+# Just InCard Android 13.0.10
 
 Standalone Android project for Just InCard.
 

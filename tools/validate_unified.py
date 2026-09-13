@@ -85,7 +85,7 @@ for token in [
     'compileSdk = 36',
     'targetSdk = 36',
     'versionCode = 13009',
-    'versionName = "13.0.9"',
+    'versionName = "13.0.10"',
     'play-services-auth:22.0.0',
     'GOOGLE_DRIVE_API_BASE',
     'GOOGLE_DRIVE_UPLOAD_BASE',
@@ -101,7 +101,7 @@ for token in [
     "build-windows:",
     "windows-latest",
     "ubuntu-latest",
-    'ANDROID_VERSION: "13.0.9"',
+    'ANDROID_VERSION: "13.0.10"',
     'sdkmanager "platforms;android-36"',
     'gradle-version: "9.5.0"',
     ":app:testDebugUnitTest :app:lintDebug",
@@ -239,10 +239,10 @@ for token in ["Monster", "Zauber", "Fallen", "Extra Deck", "Side Deck"]:
     if token not in windows_sheet:
         errors.append(f"Android deck sheet ordering missing {token}")
 
-# Windows 1.3.4 keeps the IONOS account path and performs account login fully in-app.
+# Windows 1.3.5 keeps the IONOS account path and performs account login fully in-app.
 windows_version = need("windows/justincard/version.py").read_text("utf-8")
-if 'APP_VERSION = "1.3.4"' not in windows_version:
-    errors.append("Windows version is not 1.3.4")
+if 'APP_VERSION = "1.3.5"' not in windows_version:
+    errors.append("Windows version is not 1.3.5")
 windows_v128 = need("windows/justincard/v128_features.py").read_text("utf-8")
 for token in [
     "Backup erstellen",
@@ -251,7 +251,7 @@ for token in [
     "install_v128_patches",
 ]:
     if token not in windows_v128:
-        errors.append(f"Windows 1.3.4 feature missing {token}")
+        errors.append(f"Windows 1.3.5 feature missing {token}")
 for token in [
     "SearchAddActionRow",
     "_AdaptiveCollectionPreview",
@@ -259,7 +259,7 @@ for token in [
     "move_quantity_to_add_button",
 ]:
     if token not in windows_v128:
-        errors.append(f"Windows 1.3.4 UI hotfix missing {token}")
+        errors.append(f"Windows 1.3.5 UI hotfix missing {token}")
 windows_v130 = need("windows/justincard/v130_features.py").read_text("utf-8")
 for token in [
     "GLOBAL_LANGUAGE_SETTING",
@@ -269,7 +269,7 @@ for token in [
     "install_v130_patches",
 ]:
     if token not in windows_v130:
-        errors.append(f"Windows 1.3.4 feature missing {token}")
+        errors.append(f"Windows 1.3.5 feature missing {token}")
 for token in ["Monster", "Zauber", "Fallen", "Extra Deck", "Side Deck"]:
     if token not in windows_cloud:
         errors.append(f"Windows deck sheet ordering missing {token}")
@@ -300,7 +300,7 @@ for token in ["justincard-account-sync-v1", "sync_windows_account", "merge_paylo
 windows_v132 = need("windows/justincard/v132_features.py").read_text("utf-8")
 for token in ["Just InCard Konto (IONOS)", "Nur lokal verwenden", "Mit Just InCard Konto anmelden", "install_v132_patches"]:
     if token not in windows_v132:
-        errors.append(f"Windows 1.3.4 account UI missing {token}")
+        errors.append(f"Windows 1.3.5 account UI missing {token}")
 windows_search = need("windows/justincard/ui/search_page.py").read_text("utf-8")
 for token in ["select_visible_first", "self.table.selectRow(0)", "self.model.card_at(0)", "QTimer.singleShot(0, select_visible_first)"]:
     if token not in windows_search:
