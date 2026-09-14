@@ -77,6 +77,7 @@ fun SettingsScreen(
     val syncStatus by viewModel.syncStatus.collectAsState()
     var createSheet by remember { mutableStateOf(false) }
     var confirmBackupImport by remember { mutableStateOf(false) }
+    var confirmForceAccountUpload by remember { mutableStateOf(false) }
     var sheetAddress by remember(state.spreadsheetId) { mutableStateOf(state.spreadsheetId) }
     var accountLogin by remember { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
@@ -162,6 +163,20 @@ fun SettingsScreen(
                             Spacer(Modifier.width(8.dp))
                             Text("Konto jetzt synchronisieren")
                         }
+                        OutlinedButton(
+                            onClick = { confirmForceAccountUpload = true },
+                            enabled = !state.busy,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Icon(Icons.Default.Upload, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Sammlung + Decks vollständig hochladen")
+                        }
+                        Text(
+                            "Der vollständige Upload ersetzt den Serverstand exakt durch den aktuellen lokalen Stand. Nicht mehr lokale Karten oder Decks werden auf dem Server bewusst gelöscht.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
                         OutlinedButton(
                             onClick = viewModel::useLocalMode,
                             enabled = !state.busy,
@@ -332,7 +347,7 @@ fun SettingsScreen(
                     }
                 }
                 Text(
-                    "Speichern überträgt den lokalen Stand, Laden führt den Cloud-Stand lokal zusammen und Synchronisieren gleicht beide Richtungen ab. Windows 1.3.3 und Android 13.0.10 verwenden dieselbe Tabelle und dasselbe private Drive-Backup; Sammlung und Decks werden gemeinsam übertragen.",
+                    "Speichern überträgt den lokalen Stand, Laden führt den Cloud-Stand lokal zusammen und Synchronisieren gleicht beide Richtungen ab. Windows 1.3.3 und Android 13.0.11 verwenden dieselbe Tabelle und dasselbe private Drive-Backup; Sammlung und Decks werden gemeinsam übertragen.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -355,7 +370,7 @@ fun SettingsScreen(
 
         item {
             Text(
-                "Just InCard Android 13.0.10 · native Kotlin/Compose-Neuaufbau",
+                "Just InCard Android 13.0.11 · native Kotlin/Compose-Neuaufbau",
                 modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -382,6 +397,25 @@ fun SettingsScreen(
                 createSheet = false
             },
             onDismiss = { createSheet = false },
+        )
+    }
+    if (confirmForceAccountUpload) {
+        AlertDialog(
+            onDismissRequest = { confirmForceAccountUpload = false },
+            icon = { Icon(Icons.Default.Upload, contentDescription = null) },
+            title = { Text("Serverstand vollständig ersetzen?") },
+            text = {
+                Text(
+                    "Die lokale Sammlung und alle lokalen Decks dieses Geräts werden als allein gültiger Account-Stand hochgeladen. Servereinträge, die lokal fehlen, werden dabei gelöscht. Die Server-Historie behält die vorherige Revision als Sicherung."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmForceAccountUpload = false
+                    viewModel.forceUploadAccount()
+                }) { Text("Vollständig hochladen") }
+            },
+            dismissButton = { TextButton(onClick = { confirmForceAccountUpload = false }) { Text("Abbrechen") } },
         )
     }
     if (confirmBackupImport) {

@@ -1,0 +1,11 @@
+Just InCard Windows 1.3.6
+
+- Deckbau-Vorschau vollständig neu positioniert: Die linke Deckauswahl wurde kompakter und darunter befindet sich jetzt ein fester Vorschauplatz für Kartenbild, Set-Informationen und Effekt-/Beschreibungstext.
+- Die feste Vorschau reagiert sowohl auf Karten aus der Sammlung als auch auf Karten, die bereits im aktuellen Deck liegen.
+- Die bisherige zusätzliche Deckbau-Vorschau unter der Sammlung wird ausgeblendet, damit keine falsche Karte an mehreren Stellen angezeigt wird.
+- Sammlungskarten, deren vorhandene Kopien bereits vollständig im aktuellen Deck verbraucht sind, werden im Deckbau ausgegraut.
+- Neue Option "Nicht verfügbare Karten ausblenden" im Deckbau.
+- Verfügbarkeitsanzeige wird nach Hinzufügen, Entfernen, Deckwechsel und Aktualisierung sofort neu berechnet.
+- Manuelle Aktion "Sammlung + Decks vollständig hochladen": Der lokale Stand kann nach ausdrücklicher Bestätigung als allein gültiger Account-Stand auf dem Server gespeichert werden. Servereinträge, die lokal nicht mehr existieren, werden dabei absichtlich entfernt.
+- Normaler Konto-Sync bleibt weiterhin vor unbeabsichtigtem Leeren des Servers geschützt.
+- Alle bisherigen Funktionen aus Windows 1.3.5 bleiben erhalten.

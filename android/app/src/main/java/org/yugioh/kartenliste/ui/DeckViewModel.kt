@@ -27,6 +27,14 @@ enum class DeckSort(val label: String) {
     QUANTITY("Menge"),
 }
 
+data class DeckPreviewUi(
+    val name: String,
+    val imageUrl: String,
+    val setCode: String,
+    val description: String,
+    val source: String,
+)
+
 class DeckViewModel(
     private val repository: DeckRepository,
     collectionRepository: CollectionRepository,
@@ -67,6 +75,8 @@ class DeckViewModel(
     val ascending: StateFlow<Boolean> = _ascending.asStateFlow()
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
+    private val _preview = MutableStateFlow<DeckPreviewUi?>(null)
+    val preview: StateFlow<DeckPreviewUi?> = _preview.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -87,6 +97,32 @@ class DeckViewModel(
             DeckSort.QUANTITY -> compareBy<DeckCard> { it.quantity }
         }
         return if (_ascending.value) cards.sortedWith(comparator) else cards.sortedWith(comparator.reversed())
+    }
+
+    fun preview(item: CollectionItem) {
+        viewModelScope.launch {
+            val localized = runCatching { cards.localizedCard(item.cardKey) }.getOrNull()
+            _preview.value = DeckPreviewUi(
+                name = localized?.name ?: item.cardName,
+                imageUrl = localized?.imageUrl?.ifBlank { item.imageUrl } ?: item.imageUrl,
+                setCode = item.selectedPrint.setCode,
+                description = localized?.description.orEmpty(),
+                source = "Aus Sammlung",
+            )
+        }
+    }
+
+    fun preview(card: DeckCard) {
+        viewModelScope.launch {
+            val localized = runCatching { cards.localizedCard(card.cardKey) }.getOrNull()
+            _preview.value = DeckPreviewUi(
+                name = localized?.name ?: card.cardName,
+                imageUrl = localized?.imageUrl?.ifBlank { card.imageUrl } ?: card.imageUrl,
+                setCode = card.setCode,
+                description = localized?.description.orEmpty(),
+                source = "Im aktuellen Deck",
+            )
+        }
     }
 
     fun create(name: String) {

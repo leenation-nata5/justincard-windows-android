@@ -146,6 +146,44 @@ class AccountSyncEngine(
         }
     }
 
+    suspend fun forceUpload(): AccountSyncReport = mutex.withLock {
+        withContext(Dispatchers.IO) {
+            val token = preferences.accountToken
+            if (token.isBlank()) throw AccountApiException("Bitte zuerst mit deinem Just-InCard-Konto anmelden.", 401, "unauthorized")
+
+            val local = normalizePayload(buildLocalPayload())
+            var remote = api.getSnapshot(token)
+            val revision = try {
+                api.putSnapshot(
+                    token = token,
+                    payload = local,
+                    revision = remote.revision,
+                    deviceName = preferences.deviceName,
+                    forceReplace = true,
+                )
+            } catch (error: AccountApiException) {
+                if (error.status != 409) throw error
+                remote = api.getSnapshot(token)
+                api.putSnapshot(
+                    token = token,
+                    payload = local,
+                    revision = remote.revision,
+                    deviceName = preferences.deviceName,
+                    forceReplace = true,
+                )
+            }
+
+            saveBase(local)
+            preferences.accountRestoreReady = true
+            preferences.accountLastSyncAt = System.currentTimeMillis()
+            AccountSyncReport(
+                revision = revision,
+                collectionCount = local.optJSONArray("collection")?.length() ?: 0,
+                deckCount = local.optJSONArray("decks")?.length() ?: 0,
+            )
+        }
+    }
+
     private suspend fun buildLocalPayload(): JSONObject {
         val collectionRows = collection.allForSync().filter { !it.deleted && it.quantity > 0 }.map { item ->
             val syncId = collectionIdentity(

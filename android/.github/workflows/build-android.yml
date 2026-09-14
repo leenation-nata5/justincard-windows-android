@@ -12,11 +12,11 @@ permissions:
   contents: read
 
 env:
-  ANDROID_VERSION: "13.0.10"
+  ANDROID_VERSION: "13.0.11"
 
 jobs:
   build:
-    name: Android 13.0.10 / APK + AAB
+    name: Android 13.0.11 / APK + AAB
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:

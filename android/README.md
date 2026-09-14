@@ -1,13 +1,35 @@
-# Just InCard Android 13.0.10
+# Just InCard Android 13.0.11
 
-Standalone Android project for Just InCard.
+## Neu in 13.0.11
 
-## Account mode
-- First start: choose **local only** or **Just InCard account**.
-- When logging into an existing account, the server snapshot is downloaded first.
-- A remote account that already contains collection/deck data is never overwritten by the pre-login local database.
-- If the remote account is truly empty, existing local data may initialize it.
-- Card images remain on the device; account sync stores collection/deck metadata only.
+### Deckbau
 
-## GitHub build
-The included workflow `.github/workflows/build-android.yml` builds debug, CI release APK/AAB and optionally a production-signed release when signing secrets are configured.
+- feste Karten-/Effektvorschau im Deckbereich
+- Vorschau sowohl für Karten im Deck als auch für Karten aus der Sammlungsauswahl
+- nicht mehr verfügbare Sammlungskarten werden ausgegraut
+- **Nicht verfügbare Karten ausblenden** blendet vollständig verbrauchte Drucke aus
+- Verfügbarkeit berücksichtigt den konkreten Set-Code/Druck und zusätzlich das Yu-Gi-Oh!-Limit von maximal drei Exemplaren einer Karte
+
+### Just-InCard-Konto
+
+Der normale Account-Sync behält seinen Schutz vor versehentlichem Löschen eines gefüllten Serverstands.
+
+Zusätzlich gibt es in den Einstellungen die bestätigungspflichtige Aktion:
+
+**Sammlung + Decks vollständig hochladen**
+
+Damit wird der lokale Stand absichtlich als vollständiger Serverstand gespeichert. Lokal entfernte Sammlungseinträge oder Decks werden damit auch serverseitig entfernt.
+
+## Weiterhin enthalten
+
+- Wahl zwischen lokalem Modus und Just-InCard-Konto
+- Livebild/Scanner
+- Suche und Sammlung
+- Google-Sheets-/Drive-Synchronisation
+- lokale Backups/CSV
+- appweite Kartentext-Sprache
+- Offline-Arbeitskopie auf dem Gerät
+
+## GitHub-Build
+
+Der enthaltene Workflow `.github/workflows/build-android.yml` erstellt die Android-Artefakte. Version: `13.0.11`, VersionCode: `13010`.

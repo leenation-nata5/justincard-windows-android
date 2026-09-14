@@ -159,6 +159,25 @@ class SettingsViewModel(
         }
     }
 
+    fun forceUploadAccount() {
+        if (preferences.accountMode != "account" || preferences.accountToken.isBlank()) {
+            _state.value = _state.value.copy(error = "Bitte zuerst mit deinem Just-InCard-Konto anmelden.")
+            return
+        }
+        viewModelScope.launch {
+            _state.value = _state.value.copy(busy = true, error = null, message = null)
+            runCatching { accountSync.forceUpload() }
+                .onSuccess { report ->
+                    _state.value = snapshot().copy(
+                        message = "Serverstand ersetzt: ${report.collectionCount} Sammlungseinträge und ${report.deckCount} Decks wurden vollständig hochgeladen.",
+                    )
+                }
+                .onFailure { error ->
+                    _state.value = snapshot().copy(error = error.message ?: "Vollständiger Konto-Upload fehlgeschlagen.")
+                }
+        }
+    }
+
     fun updateAutomaticSync(value: Boolean) {
         preferences.automaticSync = value
         _state.value = _state.value.copy(automaticSync = preferences.automaticSync)

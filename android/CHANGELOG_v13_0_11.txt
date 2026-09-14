@@ -1,0 +1,10 @@
+Just InCard Android 13.0.11
+
+- Deckbau erhält eine feste Kartenvorschau mit Kartenbild, Name, Set-Code und lokalisiertem Effekt-/Beschreibungstext.
+- Karten im Deck können direkt zur Vorschau ausgewählt werden; die Sammlungsauswahl aktualisiert dieselbe Vorschau ebenfalls.
+- Sammlungskarten im Deckbau werden ausgegraut, sobald der betreffende Druck vollständig im Deck verwendet wird oder das Drei-Kopien-Limit erreicht ist.
+- Neue Option "Nicht verfügbare Karten ausblenden" in der Sammlungsauswahl des Deckbaus.
+- Verfügbarkeit berücksichtigt den konkreten Set-Code/Druck sowie das globale Drei-Kopien-Limit einer Karte.
+- Neue manuelle Aktion "Sammlung + Decks vollständig hochladen": Nach Bestätigung ersetzt der lokale Stand den Account-Stand auf dem Server vollständig; entfernte Einträge werden damit auch serverseitig gelöscht.
+- Normaler Konto-Sync bleibt weiterhin vor unbeabsichtigtem Leeren des Servers geschützt.
+- Alle bisherigen Funktionen aus Android 13.0.10 bleiben erhalten.

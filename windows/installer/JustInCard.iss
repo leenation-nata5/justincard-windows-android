@@ -1,5 +1,5 @@
 #ifndef AppVersion
-  #define AppVersion "1.3.5"
+  #define AppVersion "1.3.6"
 #endif
 #ifndef SourceDir
   #define SourceDir "..\release\JustInCard-Windows-Portable-" + AppVersion

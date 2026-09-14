@@ -1,8 +1,0 @@
-Just InCard Android 13.0.10
-
-- Konto-Synchronisierung gegen versehentliches Leeren des Serverstands abgesichert.
-- Nach Login wird der Serverstand vollständig lokal geladen und anschließend überprüft, bevor ein Upload erlaubt wird.
-- Bei fehlgeschlagenem Restore wird der vorherige lokale Stand wiederhergestellt und der Upload blockiert.
-- Fehlende lokale Datensätze werden nicht mehr automatisch als Löschbefehl interpretiert.
-- Automatischer Sync lädt bei ungeprüftem Konto zuerst den Serverstand.
-- Scanner, Livebild, Suche, Google Sheets und übrige Funktionen bleiben unverändert.

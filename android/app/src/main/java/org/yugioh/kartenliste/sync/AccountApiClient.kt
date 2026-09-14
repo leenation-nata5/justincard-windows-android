@@ -60,7 +60,13 @@ class AccountApiClient(
         )
     }
 
-    fun putSnapshot(token: String, payload: JSONObject, revision: Long, deviceName: String): Long {
+    fun putSnapshot(
+        token: String,
+        payload: JSONObject,
+        revision: Long,
+        deviceName: String,
+        forceReplace: Boolean = false,
+    ): Long {
         val data = request(
             path = "sync.php",
             method = "POST",
@@ -69,7 +75,8 @@ class AccountApiClient(
                 .put("if_revision", revision)
                 .put("source_device", deviceName)
                 .put("schema", ACCOUNT_SCHEMA)
-                .put("payload", payload),
+                .put("payload", payload)
+                .put("force_replace", forceReplace),
         )
         return data.optLong("revision", revision + 1L)
     }
@@ -86,7 +93,7 @@ class AccountApiClient(
             readTimeout = 25_000
             useCaches = false
             setRequestProperty("Accept", "application/json")
-            setRequestProperty("User-Agent", "JustInCard-Android/13.0.10")
+            setRequestProperty("User-Agent", "JustInCard-Android/13.0.11")
             if (token.isNotBlank()) setRequestProperty("Authorization", "Bearer $token")
             if (body != null) {
                 doOutput = true

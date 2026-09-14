@@ -60,7 +60,7 @@ class JustInCardAccountClient:
         body = None
         headers = {
             "Accept": "application/json",
-            "User-Agent": "JustInCard-Windows/1.3.5",
+            "User-Agent": "JustInCard-Windows/1.3.6",
         }
         if payload is not None:
             body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
@@ -113,7 +113,7 @@ class JustInCardAccountClient:
         payload = data.get("payload") if isinstance(data.get("payload"), dict) else {}
         return int(data.get("revision") or 0), normalize_payload(payload)
 
-    def put_snapshot(self, token: str, payload: dict[str, Any], revision: int, device_name: str) -> int:
+    def put_snapshot(self, token: str, payload: dict[str, Any], revision: int, device_name: str, *, force_replace: bool = False) -> int:
         data = self._request(
             "sync.php",
             method="POST",
@@ -123,6 +123,7 @@ class JustInCardAccountClient:
                 "source_device": device_name,
                 "schema": ACCOUNT_SCHEMA,
                 "payload": normalize_payload(payload),
+                "force_replace": bool(force_replace),
             },
         )
         return int(data.get("revision") or (revision + 1))
@@ -805,3 +806,48 @@ def sync_windows_account(
         "decks": len(merged["decks"]),
         "report": report,
     }
+
+def force_upload_windows_account(
+    database: Any,
+    token: str,
+    *,
+    client: JustInCardAccountClient | None = None,
+    base_path: Path | None = None,
+) -> dict[str, Any]:
+    """Replace the complete remote account snapshot with this device's local state.
+
+    This is deliberately destructive and is only called from an explicit UI
+    action that requires user confirmation. Unlike normal synchronisation,
+    rows/decks missing locally are intentionally removed from the server.
+    """
+    if not token:
+        raise AccountApiError("Nicht mit einem Just-InCard-Konto angemeldet.", status=401, code="unauthorized")
+    api = client or JustInCardAccountClient()
+    path = base_path or default_base_path()
+    local = normalize_payload(windows_snapshot(database))
+    revision, _remote = api.get_snapshot(token)
+    try:
+        new_revision = api.put_snapshot(
+            token, local, revision, windows_device_name(), force_replace=True
+        )
+    except AccountApiError as exc:
+        if exc.status != 409:
+            raise
+        # If another device changed the snapshot between GET and PUT, refresh
+        # the revision exactly once. The explicit action still means: local
+        # state is authoritative.
+        revision, _remote = api.get_snapshot(token)
+        new_revision = api.put_snapshot(
+            token, local, revision, windows_device_name(), force_replace=True
+        )
+
+    _save_base(path, local)
+    database.set_setting(RESTORE_READY_SETTING, True)
+    database.set_setting(LAST_SYNC_SETTING, time.strftime("%Y-%m-%d %H:%M:%S"))
+    return {
+        "revision": new_revision,
+        "collection": len(local["collection"]),
+        "decks": len(local["decks"]),
+        "mode": "force_uploaded",
+    }
+

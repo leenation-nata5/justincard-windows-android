@@ -1,45 +1,35 @@
-# Just InCard – Android 13.0.10 und Windows 1.3.5
+# Just InCard – Windows 1.3.6 / Android 13.0.11
 
-Dieses gemeinsame GitHub-Repository enthält ausschließlich die beiden Programme:
+Gemeinsames GitHub-Projekt für die Windows- und Android-Version von Just InCard.
 
-- **Android 13.0.10** – native Kotlin-/Compose-Version mit Livebild, Scanner, Sammlung, Decks, Google-Synchronisierung und Just-InCard-Konto.
-- **Windows 1.3.5** – Desktop-Version mit Suche, Galerie-Scanner, Sammlung, Decks, Google-Synchronisierung und Just-InCard-Konto.
+## Windows 1.3.6
 
-Der IONOS-Webspace wird ab dieser Version **nicht mehr in diesem ZIP mitgeführt**. Er wird als separates Webspace-ZIP ausgeliefert, damit App-Quellcode und Server-Dateien unabhängig aktualisiert werden können.
-Für den neuen Fail-Safe wird **Just InCard Webspace 1.2.1** empfohlen; dort blockiert `sync.php` zusätzlich leere destruktive Snapshots und archiviert die vorherige Serverrevision.
+- fester Vorschauplatz im linken Bereich des Deckbauers
+- Vorschau für Sammlungskarten und bereits im Deck befindliche Karten
+- Bild, Kartenname, Setdaten und Effekt-/Beschreibungstext in derselben Vorschau
+- vollständig verbrauchte Sammlungskarten werden im Deckbau ausgegraut
+- nicht verfügbare Karten können ausgeblendet werden
+- expliziter manueller Voll-Upload von Sammlung + Decks zum Just-InCard-Account
+- normaler Account-Sync bleibt gegen versehentliches Löschen geschützt
+- lokale Nutzung, IONOS-Account, Google Sheets und lokale Backups bleiben parallel nutzbar
 
-## Konto-Sync Hotfix 1.3.5 / 13.0.10
+## Android 13.0.11
 
-Der IONOS-Kontoabgleich ist jetzt fail-safe: Ein Gerät darf erst hochladen, nachdem der vorhandene Serverstand vollständig in Sammlung und Decks übernommen und lokal wieder verifiziert wurde. Ein fehlender lokaler Datensatz wird nicht mehr automatisch als Löschung interpretiert. Dadurch kann ein fehlerhafter/leer gebliebener lokaler Import den Serverstand nicht mehr leeren.
+- feste Deckbau-Vorschau mit Bild und lokalisiertem Effekttext
+- Vorschau aus Deckliste und Sammlungsauswahl
+- ausgegraute/versteckbare nicht verfügbare Sammlungskarten
+- Verfügbarkeit nach konkretem Kartendruck/Set-Code plus Drei-Kopien-Regel
+- expliziter manueller Voll-Upload von Sammlung + Decks zum Just-InCard-Account
+- normaler Account-Sync bleibt gegen unbeabsichtigtes Leeren geschützt
+- Livebild, Scanner, Suche, Sammlung, Decks, Google-Synchronisierung und lokaler Modus bleiben erhalten
 
-
-## Windows 1.3.5 – Kontoanmeldung ohne Browser
-
-Die Anmeldung am Just-InCard-Konto erfolgt vollständig im Windows-Programm. Der Nutzer gibt Benutzername/E-Mail und Passwort in den integrierten Dialog ein. Windows sendet die Anmeldung direkt per HTTPS an `https://justincard.de/api/v1/login.php`; beim Anmelden wird **kein Chrome-, Edge- oder anderes Browserfenster geöffnet**.
-
-Nach erfolgreichem Login wird weiterhin zuerst der vorhandene IONOS-Kontostand geladen. Erst danach darf ein normaler Abgleich stattfinden. Sammlung und Decks bleiben zusätzlich lokal auf dem jeweiligen Gerät verfügbar.
-
-Die Kontoerstellung bleibt auf der Webseite möglich, wird von Windows jedoch nicht automatisch geöffnet.
-
-## Android 13.0.10
-
-Android 13.0.10 erhält denselben Fail-Safe wie Windows: Nach Login wird der Serverstand zuerst lokal geladen und geprüft; erst danach darf ein Upload erfolgen. Bei fehlgeschlagenem Restore bleibt der Serverstand unangetastet.
-
-## GitHub Actions
-
-`.github/workflows/build-all.yml` validiert das gemeinsame Repository und baut Android und Windows getrennt:
-
-- Android: Unit-Tests, Lint, Debug-/CI-Release-APK und AAB, optional produktive Signierung.
-- Windows: Python-Tests, Portable-ZIP und Installer.
-
-## Struktur
+## Projektstruktur
 
 ```text
-android/    Android-13.0.10-Quellprojekt
-windows/    Windows-1.3.5-Quellprojekt
-shared/     gemeinsamer Cloud-/Account-Datenvertrag
-tools/      plattformübergreifende Repository-Prüfungen
-.github/    gemeinsamer Android-/Windows-Build
+android/    Android-13.0.11-Quellprojekt
+windows/    Windows-1.3.6-Quellprojekt
+tools/      gemeinsame Repository-Prüfungen
+.github/    GitHub-Actions-Workflows
 ```
 
-Der passende IONOS-Webspace wird separat bereitgestellt.
+Der IONOS-Webspace wird getrennt ausgeliefert und ist nicht Bestandteil dieses ZIPs.
